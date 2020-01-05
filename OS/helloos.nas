@@ -1,6 +1,8 @@
 ; hello-os
 ; TAB=4
 
+		ORG		0x7c00			; 指明程序的装载地址
+
 ; 以下这段是标准FAT12格式软盘专用的代码
 
         DB     0xeb, 0x4e, 0x90
@@ -22,7 +24,6 @@
         DB     "HELLO-OS   "  ; 磁盘的名称（11字节）
         DB     "FAT12   "     ; 磁盘格式名称（8字节）
         RESB   18             ; 先空出18字节
-
 ; 程序主体
 entry:
 		MOV		AX,0			; 初始化寄存器
@@ -37,18 +38,17 @@ putloop:
 		ADD		SI,1			; SI+1
 		CMP		AL,0
 		JE		fin
-		MOV		AH,0x0e			; 显示一个文字
+		MOV		AH,0x0e			; 显示一个文字的相关设定
 		MOV		BX,15			; 指定字符颜色
         INT		0x10			; 调用显卡BIOS
 		JMP		putloop
 fin:
 		HLT						; 让cpu停止，等待指令
 		JMP		fin				; 无限循环
-
 ; 信息显示部分
 msg:
 		DB		0x0a, 0x0a		; 2个换行
-		DB		"hello, world"
+		DB		"hello,world. i love you"
 		DB		0x0a			; 改行
 		DB		0
 

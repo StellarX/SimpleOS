@@ -11,5 +11,7 @@ make.bat：调用make.exe(？？？)
 run.bat：运行pc模拟器
 
 本次改动说明：
-新建Makefile代替了asm.bat和makeimg.bat
-删除了asm.bat和makeimg.bat
+将批处理命令添加到Makefile中，简化命令
+
+在Makefile中添加img、asm、run、install命令
+删除run.bat

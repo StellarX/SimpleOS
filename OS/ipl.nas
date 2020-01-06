@@ -48,7 +48,7 @@ fin:
 ; 信息显示部分
 msg:
 		DB		0x0a, 0x0a		; 2个换行
-		DB		"i love you"
+		DB		"how are you"
 		DB		0x0a			; 改行
 		DB		0
 

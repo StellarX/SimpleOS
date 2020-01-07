@@ -5,7 +5,8 @@
 
 ; 以下这段是标准FAT12格式软盘专用的代码
 
-        DB     0xeb, 0x4e, 0x90
+		JMP    entry
+        DB     0x90
         DB     "HELLOIPL"     ; 启动区的名称可以是任意的字符串（8字节）
         DW     512            ; 每个扇区（sector）的大小（必须为512字节）
         DB     1              ; 簇（cluster）的大小（必须为1个扇区）
@@ -30,8 +31,27 @@ entry:
 		MOV		SS,AX
 		MOV		SP,0x7c00
 		MOV		DS,AX
-		MOV		ES,AX
 
+;
+		
+		MOV		AX,0x0820	
+		MOV		ES,AX			; why don't MOV ES,0x0820 ???
+		MOV		CH,0			; 柱面0
+		MOV		DH,0			; 磁头0
+		MOV		CL,2			; 扇区2
+		
+		MOV		AH,0x02			; AH=0x02 : 读盘
+		MOV		AL,1			; 1个扇区
+		MOV		BX,0
+		MOV		DL,0x00			; A驱动器
+		INT		0x13			; 调用磁盘BIOS
+		JC		error
+
+fin:
+		HLT						; 让cpu停止，等待指令
+		JMP		fin				; 无限循环
+		
+error:
 		MOV		SI,msg
 putloop:
 		MOV		AL,[SI]
@@ -42,13 +62,11 @@ putloop:
 		MOV		BX,15			; 指定字符颜色
         INT		0x10			; 调用显卡BIOS
 		JMP		putloop
-fin:
-		HLT						; 让cpu停止，等待指令
-		JMP		fin				; 无限循环
+
 ; 信息显示部分
 msg:
 		DB		0x0a, 0x0a		; 2个换行
-		DB		"how are you"
+		DB		"error"
 		DB		0x0a			; 改行
 		DB		0
 

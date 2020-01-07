@@ -1,6 +1,8 @@
 ; hello-os
 ; TAB=4
 
+CYLS	EQU		10				; 读取多少柱面
+
 		ORG		0x7c00			; 指明程序的装载地址
 
 ; 以下这段是标准FAT12格式软盘专用的代码
@@ -32,21 +34,46 @@ entry:
 		MOV		SP,0x7c00
 		MOV		DS,AX
 
-;
+;读盘
 		
 		MOV		AX,0x0820	
-		MOV		ES,AX			; why don't MOV ES,0x0820 ???
+		MOV		ES,AX			
 		MOV		CH,0			; 柱面0
 		MOV		DH,0			; 磁头0
 		MOV		CL,2			; 扇区2
-		
+readloop:
+		MOV		SI,0			; 失败次数记录
+retry:
 		MOV		AH,0x02			; AH=0x02 : 读盘
 		MOV		AL,1			; 1个扇区
 		MOV		BX,0
 		MOV		DL,0x00			; A驱动器
 		INT		0x13			; 调用磁盘BIOS
-		JC		error
-
+		JNC		next			; 没有carry就跳转，程序正确
+		ADD		SI,1			; SI+1
+		CMP		SI,5			; SI与5比较
+		JAE		error			; SI >= 5 则跳转到error
+		MOV		AH,0x00
+		MOV		DL,0x00			; A驱动器
+		INT		0x13			; 重置驱动器，系统复位
+		JMP		retry
+next:
+		MOV		AX,ES			; 内存地址后移0x200，因为一个扇区是512B
+		ADD		AX,0x0020
+		MOV		ES,AX			; 因为没有ADD ES,0x020指令，所以这里稍微绕个弯
+		ADD		CL,1			 
+		CMP		CL,18			
+		JBE		readloop		; CL <= 18 则继续读盘
+		MOV		CL,1			; 一个柱面的一面读完，开始从另一面的第一扇区读
+		ADD		DH,1			; 变换磁头
+		CMP		DH,2
+		JB		readloop		; DH < 2 则继续读盘
+		MOV		DH,0
+		ADD		CH,1			; 柱面+1
+		CMP		CH,CYLS
+		JB		readloop		; CH < CYLS 则继续读盘
+		
+;虽然读完了，但是因为暂时没有要做的事所以休眠
 fin:
 		HLT						; 让cpu停止，等待指令
 		JMP		fin				; 无限循环

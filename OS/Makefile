@@ -17,9 +17,14 @@ default:
 ipl.bin : ipl.nas Makefile
 	$(NASK) ipl.nas ipl.bin ipl.lst
 
-haribote.img : ipl.bin Makefile
+haribote.sys : haribote.nas Makefile
+	$(NASK) haribote.nas haribote.sys haribote.lst
+
+haribote.img : ipl.bin haribote.sys Makefile
 	$(EDIMG)   imgin:../z_tools/fdimg0at.tek \
-		wbinimg src:ipl.bin len:512 from:0 to:0   imgout:haribote.img
+		wbinimg src:ipl.bin len:512 from:0 to:0 \
+		copy from:haribote.sys to:@: \
+		imgout:haribote.img
 		
 #命令 在cmd窗口输入，就会执行对应的命令
 img:
@@ -39,7 +44,9 @@ install :
 clean :
 	-$(DEL) ipl.bin
 	-$(DEL) ipl.lst
-
+	-$(DEL) haribote.sys
+	-$(DEL) haribote.lst
+	
 #从下面可以看出，make.exe的作用是进入makefile文件，然后执行里面的命令
 src_only:
 	$(MAKE) clean

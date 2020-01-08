@@ -74,9 +74,9 @@ next:
 		JB		readloop		; CH < CYLS 则继续读盘
 		
 ;虽然读完了，但是因为暂时没有要做的事所以休眠
-fin:
-		HLT						; 让cpu停止，等待指令
-		JMP		fin				; 无限循环
+; 読み終わったのでharibote.sysを実行だ！
+		MOV		[0x0ff0],CH		; IPLがどこまで読んだのかをメモ
+		JMP		0xc200
 		
 error:
 		MOV		SI,msg
@@ -89,7 +89,10 @@ putloop:
 		MOV		BX,15			; 指定字符颜色
         INT		0x10			; 调用显卡BIOS
 		JMP		putloop
-
+fin:
+		HLT						; 让cpu停止，等待指令
+		JMP		fin				; 无限循环
+		
 ; 信息显示部分
 msg:
 		DB		0x0a, 0x0a		; 2个换行

@@ -3,13 +3,18 @@
 z_tools文件夹：项目工具
 
 os文件夹内：（主要项目文件）
-ipl.nas：启动程序加载器（将OS从磁盘读入内存）
+ipl10.nas：启动程序加载器（将OS从磁盘读入内存）
 Makefile：包括文件生成规则和命令
 make.bat：调用make.exe(这个内部的命令不懂)，而make.exe的作用是进入makefile文件，然后执行里面的命令
 run.bat：运行qemu pc模拟器
 haribote.nas：存放操作系统
 
-本次改动说明：
-读盘程序/启动程序加载器已经制作完成，开始着手开发操作系统
-添加haribote.nas文件(os目前就存放于此)
-将其编译为sys文件，并保存到img文件（借助edimg.exe）
+改动说明：
+3.3
+在haribote.nas中添加设定画面模式的代码；
+在ipl执行完后，OS被装载到了内存，所以JMP到haribote在内存中的位置，执行OS
+ipl文件名改为ipl10（10个柱面）
+
+3.2
+读盘程序/启动程序加载器已经制作完成，开始着手开发操作系统；
+添加haribote.nas文件(os目前就存放于此)，将其编译为sys文件，并保存到img文件（借助edimg.exe）

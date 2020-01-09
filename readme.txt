@@ -1,5 +1,5 @@
 项目说明：   一个32位的操作系统
-文件生成结构图：https://www.processon.com/diagraming/5bac826ee4b0bd4db94e91bb
+
 
 z_tools文件夹：项目工具
 
@@ -16,6 +16,8 @@ make.bat：调用make.exe(这个内部的命令不懂)，而make.exe的作用是进入makefile文件，
 
 
 改动说明：
+4.1 往显存写入数据
+
 3.5 
 添加naskfunc.nas文件，存放用汇编写的函数，编译后与bootpack.obj链接；
 在bootpack里引用naskfunc.nas中的函数

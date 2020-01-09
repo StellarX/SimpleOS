@@ -1,14 +1,18 @@
-/* 告诉C编译器，有一个函数在别的文件里*/
-
 void io_hlt(void);
-
-/* 是函数声明却不用{ }，而用;，这表示的意思是：函数是在别的文件中，你自己找一下吧！ */
+void write_mem8(int addr, int data);
 
 
 void HariMain(void)
 {
+	int i; /* 32位整型 */
+	char *p; /* 变量p，用于BYTE型地址/8bit */
+	p = (char *) 0xa0000; /* 代入显存起始地址*/ 
 
-fin:
-	io_hlt();/*执行naskfunc.nas里的_io_hlt*/
-	goto fin;
+	for (i = 0; i <= 0xffff; i++) {//往显存写入数据
+		p[i] = i & 0x0f;/* 这可以替代write_mem8(i, i & 0x0f); */
+	}
+
+	for (;;) {
+		io_hlt();
+	}
 }

@@ -8,10 +8,10 @@ DSKCAC0	EQU		0x00008000		; 磁盘高速缓存的场所(实时模式)
 ; BOOT_INFO 启动时的信息
 CYLS	EQU		0x0ff0			; 设定启动区
 LEDS	EQU		0x0ff1
-VMODE	EQU		0x0ff2			; 关于颜色数目的信息。颜色的位数
-SCRNX	EQU		0x0ff4			; 分辨率的X（screen x）
-SCRNY	EQU		0x0ff6			; 分辨率的Y（screen y）
-VRAM	EQU		0x0ff8			; 图像缓冲区的开始地址
+VMODE	EQU		0x0ff2			; 这个地址用于保存关于颜色数目的信息。颜色的位数
+SCRNX	EQU		0x0ff4			; 这个地址用于保存分辨率的X（screen x）
+SCRNY	EQU		0x0ff6			; 这个地址用于保存分辨率的Y（screen y）
+VRAM	EQU		0x0ff8			; 这个地址用于保存显存的开始地址
 
 		ORG		0xc200			; 把程序装载到内存的哪
 

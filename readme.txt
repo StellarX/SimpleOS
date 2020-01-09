@@ -8,6 +8,7 @@ ipl10.nas：启动程序加载器（将OS从磁盘读入内存）
 
 os相关文件：
 	asmhead.nas:  对OS的各种设置，以及为了调用bootpack所写的程序
+	naskfunc.nas：存放用汇编写的函数，编译后与bootpack.obj链接
 	bootpack.c:  以后为了启动OS，还要做各种设定
 
 Makefile：包括文件生成规则和命令
@@ -15,6 +16,10 @@ make.bat：调用make.exe(这个内部的命令不懂)，而make.exe的作用是进入makefile文件，
 
 
 改动说明：
+3.5 
+添加naskfunc.nas文件，存放用汇编写的函数，编译后与bootpack.obj链接；
+在bootpack里引用naskfunc.nas中的函数
+
 3.4 
 删除haribote.nas ，分解为asmhead.nas和bootpack.c；
 32位模式前期准备（从BIOS得到键盘状态、保存当前画面模式到内存 etc.）；

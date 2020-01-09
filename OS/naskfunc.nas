@@ -1,0 +1,21 @@
+; naskfunc
+; TAB=4
+
+[FORMAT "WCOFF"]				; 制作目?文件的模式	
+[BITS 32]						; 制作32位模式用的机器?言
+
+
+; 制作目?文件的信息
+
+[FILE "naskfunc.nas"]			; 源文件名信息
+
+		GLOBAL	_io_hlt			; 程序中包含的函数名
+
+
+; 以下是??的函数
+
+[SECTION .text]		; 目?文件中写了?些之后再写程序
+
+_io_hlt:	; void io_hlt(void);
+		HLT
+		RET

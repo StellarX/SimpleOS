@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 void io_hlt(void);
 void io_cli(void);
 void io_out8(int port, int data);
@@ -13,7 +15,10 @@ void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, i
 void init_screen(char *vram, int x, int y);//初始化屏幕，绘制任务栏
 void putfont8(char *vram, int xsize, int x, int y, char c, char *font);//绘制单个字符
 void putfonts8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s);//显示字符串，asc表示字符编码使用ASCII
-
+void init_mouse_cursor8(char *mouse, char bc);//初始化鼠标指针的颜色信息
+void putblock8_8(char *vram, int vxsize, int pxsize,
+	int pysize, int px0, int py0, char *buf, int bxsize);//把存储的颜色信息放到显存（鼠标的）
+	
 #define COL8_000000		0         /*  0:黒 */
 #define COL8_FF0000		1         /*  1:明るい赤 */
 #define COL8_00FF00		2         /*  2:明るい緑 */
@@ -40,13 +45,17 @@ struct BOOTINFO {
 void HariMain(void)
 {
 	struct BOOTINFO *binfo = (struct BOOTINFO *) 0x0ff0;
-
+	char s[40], mcursor[256];
+	int mx, my;	
+	
 	init_palette();
 	init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
-	putfonts8_asc(binfo->vram, binfo->scrnx,  8,  8, COL8_FFFFFF, "ABC 123");
-	putfonts8_asc(binfo->vram, binfo->scrnx, 31, 31, COL8_000000, "Haribote OS.");
-	putfonts8_asc(binfo->vram, binfo->scrnx, 30, 30, COL8_FFFFFF, "Haribote OS.");
-	
+	mx = (binfo->scrnx - 16) / 2; /* 坐标计算在屏幕中央*/
+	my = (binfo->scrny - 28 - 16) / 2;
+	init_mouse_cursor8(mcursor, COL8_008484);
+	putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);
+	sprintf(s, "(%d, %d)", mx, my);
+	putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
 	for (;;) {
 		io_hlt();
 	}
@@ -148,6 +157,60 @@ void putfonts8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s
 	for (; *s != 0x00; s++) {
 		putfont8(vram, xsize, x, y, c, hankaku + *s * 16);//绘制单个字符的函数
 		x += 8;
+	}
+	return;
+}
+
+void init_mouse_cursor8(char *mouse, char bc)
+/* 准备鼠标指针（16x16） */
+{
+	static char cursor[16][16] = {
+		"**************..",
+		"*OOOOOOOOOOO*...",
+		"*OOOOOOOOOO*....",
+		"*OOOOOOOOO*.....",
+		"*OOOOOOOO*......",
+		"*OOOOOOO*.......",
+		"*OOOOOOO*.......",
+		"*OOOOOOOO*......",
+		"*OOOO**OOO*.....",
+		"*OOO*..*OOO*....",
+		"*OO*....*OOO*...",
+		"*O*......*OOO*..",
+		"**........*OOO*.",
+		"*..........*OOO*",
+		"............*OO*",
+		".............***"
+	};
+	int x, y;
+
+	//转化为颜色信息，然后存入mouse里
+	for (y = 0; y < 16; y++) {
+		for (x = 0; x < 16; x++) {
+			if (cursor[y][x] == '*') {
+				mouse[y * 16 + x] = COL8_000000;
+			}
+			if (cursor[y][x] == 'O') {
+				mouse[y * 16 + x] = COL8_FFFFFF;
+			}
+			if (cursor[y][x] == '.') {
+				mouse[y * 16 + x] = bc;
+			}
+		}
+	}
+	return;
+}
+
+void putblock8_8(char *vram, int vxsize, int pxsize,
+	int pysize, int px0, int py0, char *buf, int bxsize)
+{//pxsize和pysize：想要显示的图形的大小   px0和py0：在画面上的显示位置
+//bxsize：图形每一行含有的像素数  
+//bxsize和 pxsize大体相同，但也有时候想放入不同的值，所以还是要分别指定这两个值。
+	int x, y;
+	for (y = 0; y < pysize; y++) {
+		for (x = 0; x < pxsize; x++) {
+			vram[(py0 + y) * vxsize + (px0 + x)] = buf[y * bxsize + x];//把存储的颜色信息放到显存
+		}
 	}
 	return;
 }

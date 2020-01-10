@@ -8,10 +8,14 @@ os源代码：
 	asmhead.nas:  对OS的各种设置，以及为了调用bootpack所写的程序
 	naskfunc.nas：存放用汇编写的函数，编译后与bootpack.obj链接
 	bootpack.c:  以后为了启动OS，还要做各种设定
+	hankaku.txt: 字体数据
 Makefile：包括文件生成规则和命令
 make.bat：调用make.exe(这个内部的命令不懂)，而make.exe的作用是进入makefile文件，然后执行里面的命令
 
 改动说明：
+5.3
+显示变量的值和鼠标指针到屏幕
+
 5.2
 使用OSASK的字体数据hankaku.txt，将其编译为obj文件后和bootpack.obj链接；
 添加绘制字符串的函数

@@ -2,18 +2,20 @@
 
 z_tools文件夹：项目工具
 
-os文件夹内：（主要项目文件）
+os文件夹内：项目源代码
 ipl10.nas：启动程序加载器（将OS从磁盘读入内存）
-
-os相关文件：
+os源代码：
 	asmhead.nas:  对OS的各种设置，以及为了调用bootpack所写的程序
 	naskfunc.nas：存放用汇编写的函数，编译后与bootpack.obj链接
 	bootpack.c:  以后为了启动OS，还要做各种设定
-
 Makefile：包括文件生成规则和命令
 make.bat：调用make.exe(这个内部的命令不懂)，而make.exe的作用是进入makefile文件，然后执行里面的命令
 
 改动说明：
+5.2
+使用OSASK的字体数据hankaku.txt，将其编译为obj文件后和bootpack.obj链接；
+添加绘制字符串的函数
+
 5.1
 使用结构体简化代码；
 显示字符A

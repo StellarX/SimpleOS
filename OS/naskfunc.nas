@@ -1,17 +1,18 @@
 ; naskfunc
 ; TAB=4
 
-[FORMAT "WCOFF"]				; §ì–Ú?•¶Œ“I–Í®	
-[INSTRSET "i486p"]				; g—p486–½—ß
-[BITS 32]						; §ì32ˆÊ–Í®—p“IŠ÷Ší?Œ¾
-[FILE "naskfunc.nas"]			; Œ¹’ö˜•¶Œ–¼
+[FORMAT "WCOFF"]				; åˆ¶ä½œç›®æ ‡æ–‡ä»¶çš„æ¨¡å¼
+[INSTRSET "i486p"]				; ä½¿ç”¨åˆ°486ä¸ºæ­¢çš„æŒ‡ä»¤
+[BITS 32]						; åˆ¶ä½œ32ä½æ¨¡å¼ç”¨çš„æœºå™¨è¯­è¨€
+[FILE "naskfunc.nas"]			; æºç¨‹åºæ–‡ä»¶å
 
 		GLOBAL	_io_hlt, _io_cli, _io_sti, _io_stihlt
 		GLOBAL	_io_in8,  _io_in16,  _io_in32
 		GLOBAL	_io_out8, _io_out16, _io_out32
 		GLOBAL	_io_load_eflags, _io_store_eflags
+		GLOBAL	_load_gdtr, _load_idtr
 
-[SECTION .text]  ;–Ú?•¶Œ’†Ê—¹?±”V@ÄÊ’ö˜
+[SECTION .text]  ;ç›®æ ‡æ–‡ä»¶ä¸­å†™äº†è¿™äº›ä¹‹åå†å†™ç¨‹åº
 
 _io_hlt:	; void io_hlt(void);
 		HLT
@@ -68,10 +69,22 @@ _io_out32:	; void io_out32(int port, int data);
 _io_load_eflags:	; int io_load_eflags(void);
 		PUSHFD		; PUSH EFLAGS 
 		POP		EAX
-		RET     	; ?sRET?‹å?CEAX’†“I?A”íŠÅì¥”Ÿ”“I•Ô‰ñ?
+		RET     	; æ‰§è¡ŒRETè¯­å¥æ—¶ï¼ŒEAXä¸­çš„å€¼å°±è¢«çœ‹ä½œæ˜¯å‡½æ•°çš„è¿”å›å€¼
 
 _io_store_eflags:	; void io_store_eflags(int eflags);
 		MOV		EAX,[ESP+4]
 		PUSH	EAX
 		POPFD		; POP EFLAGS 
+		RET
+
+_load_gdtr:		; void load_gdtr(int limit, int addr);
+		MOV		AX,[ESP+4]		; limit
+		MOV		[ESP+6],AX
+		LGDT	[ESP+6]
+		RET
+
+_load_idtr:		; void load_idtr(int limit, int addr);
+		MOV		AX,[ESP+4]		; limit
+		MOV		[ESP+6],AX
+		LIDT	[ESP+6]
 		RET

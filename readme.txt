@@ -7,12 +7,18 @@ ipl10.nas：启动程序加载器（将OS从磁盘读入内存）
 os源代码：
 	asmhead.nas:  对OS的各种设置，以及为了调用bootpack所写的程序
 	naskfunc.nas：存放用汇编写的函数，编译后与bootpack.obj链接
-	bootpack.c:  以后为了启动OS，还要做各种设定
+	bootpack.h：常数设定和各种函数、结构体的声明
+	bootpack.c:  OS主函数
+	dsctbl.c：OS有关GDT、IDT设定的源程序
+	graphic.c：绘制图像的源程序
 	hankaku.txt: 字体数据
 Makefile：包括文件生成规则和命令
 make.bat：调用make.exe(这个内部的命令不懂)，而make.exe的作用是进入makefile文件，然后执行里面的命令
 
 改动说明：
+6.1
+添加头文件，分割编译
+
 5.4
 全局段号记录表和中断记录表初始化
 

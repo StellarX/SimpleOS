@@ -1,4 +1,4 @@
-/* ?理?像 */
+/* 绘制图像、字体、鼠标指针*/
 
 #include "bootpack.h"
 
@@ -31,8 +31,8 @@ void init_palette(void)
 void set_palette(int start, int end, unsigned char *rgb)
 {
 	int i, eflags;
-	eflags = io_load_eflags();	/* ??中断?可?志的? */
-	io_cli(); 					/* 将中断?可?志置?0，禁止中断 */
+	eflags = io_load_eflags();	/* 记录中断许可标志的值 */
+	io_cli(); 					/* 将中断许可标志置为0，禁止中断 */
 	io_out8(0x03c8, start);
 	for (i = start; i <= end; i++) {
 		io_out8(0x03c9, rgb[0] / 4);
@@ -40,7 +40,7 @@ void set_palette(int start, int end, unsigned char *rgb)
 		io_out8(0x03c9, rgb[2] / 4);
 		rgb += 3;
 	}
-	io_store_eflags(eflags);	/* ?原中断?可?志 */
+	io_store_eflags(eflags);	/* 复原中断许可标志 */
 	return;
 }
 void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1)
@@ -96,14 +96,14 @@ void putfonts8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s
 {
 	extern char hankaku[4096];
 	for (; *s != 0x00; s++) {
-		putfont8(vram, xsize, x, y, c, hankaku + *s * 16);//?制?个字符的函数
+		putfont8(vram, xsize, x, y, c, hankaku + *s * 16);//绘制单个字符的函数
 		x += 8;
 	}
 	return;
 }
 
 void init_mouse_cursor8(char *mouse, char bc)
-/* 准?鼠?指?（16x16） */
+/* 准备鼠标指针（16x16） */
 {
 	static char cursor[16][16] = {
 		"**************..",
@@ -125,7 +125,7 @@ void init_mouse_cursor8(char *mouse, char bc)
 	};
 	int x, y;
 
-	//?化??色信息，然后存入mouse里
+	//转化为颜色信息，然后存入mouse里
 	for (y = 0; y < 16; y++) {
 		for (x = 0; x < 16; x++) {
 			if (cursor[y][x] == '*') {
@@ -144,13 +144,13 @@ void init_mouse_cursor8(char *mouse, char bc)
 
 void putblock8_8(char *vram, int vxsize, int pxsize,
 	int pysize, int px0, int py0, char *buf, int bxsize)
-{//pxsize和pysize：想要?示的?形的大小   px0和py0：在画面上的?示位置
-//bxsize：?形?一行含有的像素数  
-//bxsize和 pxsize大体相同，但也有?候想放入不同的?，所以?是要分?指定??个?。
+{//pxsize和pysize：想要显示的图形的大小   px0和py0：在画面上的显示位置
+//bxsize：图形每一行含有的像素数 
+//bxsize和 pxsize大体相同，但也有时候想放入不同的值，所以还是要分别指定这两个值。
 	int x, y;
 	for (y = 0; y < pysize; y++) {
 		for (x = 0; x < pxsize; x++) {
-			vram[(py0 + y) * vxsize + (px0 + x)] = buf[y * bxsize + x];//把存?的?色信息放到?存
+			vram[(py0 + y) * vxsize + (px0 + x)] = buf[y * bxsize + x];//把存储的颜色信息放到显存
 		}
 	}
 	return;

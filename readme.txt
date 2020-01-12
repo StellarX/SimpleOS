@@ -11,11 +11,15 @@ os源代码：
 	bootpack.c:  OS主函数
 	dsctbl.c：OS有关GDT、IDT设定的源程序
 	graphic.c：绘制图像的源程序
+	int.c：初始化PIC（可编程中断控制器）
 	hankaku.txt: 字体数据
 Makefile：包括文件生成规则和命令
 make.bat：调用make.exe(这个内部的命令不懂)，而make.exe的作用是进入makefile文件，然后执行里面的命令
 
 改动说明：
+6.2
+初始化中断控制器PIC
+
 6.1
 添加头文件，分割编译
 

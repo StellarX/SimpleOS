@@ -36,7 +36,7 @@ void set_segmdesc(struct SEGMENT_DESCRIPTOR *sd, unsigned int limit, int base, i
 	sd->base_low     = base & 0xffff;
 	sd->base_mid     = (base >> 16) & 0xff;
 	sd->access_right = ar & 0xff;
-	sd->limit_high   = ((limit >> 16) & 0x0f) | ((ar >> 8) & 0xf0);
+	sd->limit_high   = ((limit >> 16) & 0x0f) | ((ar >> 8) & 0xf0);//12位段属性中的高4位放在limit_high的高4位里
 	sd->base_high    = (base >> 24) & 0xff;
 	return;
 }

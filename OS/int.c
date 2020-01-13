@@ -1,6 +1,7 @@
 /* 中断关系 */
 
 #include "bootpack.h"
+#include <stdio.h>
 
 void init_pic(void)
 /* PIC初始化 */
@@ -26,7 +27,7 @@ void init_pic(void)
 
 #define PORT_KEYDAT		0x0060 //从编号为0x0060的设备（键盘）输入的8位信息是按键编码
 
-struct KEYBUF keybuf;
+struct FIFO8 keyfifo;
 
 void inthandler21(int *esp)
 /* 来自PS/2键盘的中断 */
@@ -34,10 +35,7 @@ void inthandler21(int *esp)
 	unsigned char data;
 	io_out8(PIC0_OCW2, 0x61);	/* 通知PIC：IRQ-01已经受理完毕*/
 	data = io_in8(PORT_KEYDAT);
-	if (keybuf.flag == 0) {
-		keybuf.data = data;
-		keybuf.flag = 1;
-	}
+	fifo8_put(&keyfifo, data);//将接收到的键盘数据放到缓冲区
 	return;
 }
 

@@ -12,11 +12,15 @@ os源代码：
 	dsctbl.c：OS有关GDT、IDT设定的源程序
 	graphic.c：绘制图像的源程序
 	int.c：初始化PIC（可编程中断控制器）
+	fifo.c：循环队列缓冲区的初始化、读写数据等操作
 	hankaku.txt: 字体数据
 Makefile：包括文件生成规则和命令
 make.bat：调用make.exe(这个内部的命令不懂)，而make.exe的作用是进入makefile文件，然后执行里面的命令
 
 改动说明：
+7.2
+添加fifo.c文件，编写可变长循环队列缓冲区，用于接收按键编码
+
 7.1
 获取按键编码；
 将中断处理程序中的绘制图像的程序移出，加快中断处理

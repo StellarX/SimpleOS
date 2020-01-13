@@ -24,6 +24,16 @@ void asm_inthandler21(void);
 void asm_inthandler27(void);
 void asm_inthandler2c(void);
 
+/* fifo.c */
+struct FIFO8 {
+	unsigned char *buf;
+	int p, q, size, free, flags;//p：下一个数据写入地址，q：下一个数据读出地址  flag：记录缓冲区是否溢出
+};//free：缓冲区里没有数据的字节数  size：缓冲区的总字节数
+void fifo8_init(struct FIFO8 *fifo, int size, unsigned char *buf);
+int fifo8_put(struct FIFO8 *fifo, unsigned char data);
+int fifo8_get(struct FIFO8 *fifo);
+int fifo8_status(struct FIFO8 *fifo);
+
 /* graphic.c */
 void init_palette(void);
 void set_palette(int start, int end, unsigned char *rgb);
@@ -77,9 +87,6 @@ void set_gatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar);
 #define AR_INTGATE32	0x008e
 
 /* int.c */
-struct KEYBUF {
-	unsigned char data, flag;
-};
 void init_pic(void);
 void inthandler21(int *esp);
 void inthandler27(int *esp);

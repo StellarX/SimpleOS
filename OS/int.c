@@ -25,32 +25,6 @@ void init_pic(void)
 	return;
 }
 
-#define PORT_KEYDAT		0x0060 //从编号为0x0060的设备（键盘）输入的8位信息是按键编码
-
-struct FIFO8 keyfifo;
-
-void inthandler21(int *esp)
-/* 来自PS/2键盘的中断 */
-{
-	unsigned char data;
-	io_out8(PIC0_OCW2, 0x61);	/* 通知PIC：IRQ-01已经受理完毕*/
-	data = io_in8(PORT_KEYDAT);
-	fifo8_put(&keyfifo, data);//将接收到的键盘数据放到缓冲区
-	return;
-}
-
-struct FIFO8 mousefifo;
-
-void inthandler2c(int *esp)
-/* PS/2来自鼠标的中断 */
-{
-	unsigned char data;
-	io_out8(PIC1_OCW2, 0x64);	/*通知PIC1 IRQ-12的受理已经完成 */
-	io_out8(PIC0_OCW2, 0x62);	/*通知PIC0 IRQ-02的受理已经完成*/
-	data = io_in8(PORT_KEYDAT);
-	fifo8_put(&mousefifo, data);
-	return;
-}
 
 void inthandler27(int *esp)
 /* PIC0からの不完全割り込み対策 */

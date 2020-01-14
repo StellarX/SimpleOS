@@ -103,3 +103,21 @@ void inthandler2c(int *esp);
 #define PIC1_ICW2		0x00a1
 #define PIC1_ICW3		0x00a1
 #define PIC1_ICW4		0x00a1
+
+/* keyboard.c */
+void inthandler21(int *esp);
+void wait_KBC_sendready(void);
+void init_keyboard(void);
+extern struct FIFO8 keyfifo;
+#define PORT_KEYDAT		0x0060//从编号为0x0060的设备（键盘）输入的8位信息是按键编码
+#define PORT_KEYCMD		0x0064
+
+/* mouse.c */
+struct MOUSE_DEC {
+	unsigned char buf[3], phase;////phase用来记住接收鼠标数据的工作进展到了什么阶段
+	int x, y, btn;//存放移动信息和鼠标按键状态
+};
+void inthandler2c(int *esp);
+void enable_mouse(struct MOUSE_DEC *mdec);
+int mouse_decode(struct MOUSE_DEC *mdec, unsigned char dat);
+extern struct FIFO8 mousefifo;

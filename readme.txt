@@ -22,6 +22,9 @@ Makefile：包括文件生成规则和命令
 make.bat：调用make.exe(这个内部的命令不懂)，而make.exe的作用是进入makefile文件，然后执行里面的命令
 
 改动说明：
+9.2
+内存容量检查
+
 9.1
 整理源代码：添加keyboard.c、mouse.c
 

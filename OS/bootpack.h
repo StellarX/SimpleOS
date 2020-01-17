@@ -123,3 +123,43 @@ void inthandler2c(int *esp);
 void enable_mouse(struct MOUSE_DEC *mdec);
 int mouse_decode(struct MOUSE_DEC *mdec, unsigned char dat);
 extern struct FIFO8 mousefifo;
+
+/* memory.c */
+#define MEMMAN_FREES		4090	
+#define MEMMAN_ADDR			0x003c0000
+struct FREEINFO {	/* 可用信息 */
+	unsigned int addr, size;
+};
+struct MEMMAN {		/* 内存管理 */
+	int frees, maxfrees, lostsize, losts;
+	struct FREEINFO free[MEMMAN_FREES];/* 約32KB */
+};
+
+unsigned int memtest(unsigned int start, unsigned int end); //确认CPU是386还是486以上的并进行内存检查
+void memman_init(struct MEMMAN *man);
+unsigned int memman_total(struct MEMMAN *man);
+unsigned int memman_alloc(struct MEMMAN *man, unsigned int size);
+int memman_free(struct MEMMAN *man, unsigned int addr, unsigned int size);
+unsigned int memman_alloc_4k(struct MEMMAN *man, unsigned int size);
+int memman_free_4k(struct MEMMAN *man, unsigned int addr, unsigned int size);
+
+
+/* sheet.c */
+#define MAX_SHEETS		256
+struct SHEET {
+	unsigned char *buf;//图层首地址
+	int bxsize, bysize, vx0, vy0, col_inv, height, flags;//bxsize，bysize：整体大小
+};                      //vx，vy：在画面上的坐标   col_inv 透明色色号    
+struct SHTCTL {
+	unsigned char *vram;//VRAM的地址
+	int xsize, ysize, top;//画面的大小  top代表最上面图层的高度
+	struct SHEET *sheets[MAX_SHEETS];//用于存放我们准备的256个图层的结构体的地址
+	struct SHEET sheets0[MAX_SHEETS];//用于存放我们准备的256个图层的信息
+};
+struct SHTCTL *shtctl_init(struct MEMMAN *memman, unsigned char *vram, int xsize, int ysize);
+struct SHEET *sheet_alloc(struct SHTCTL *ctl);
+void sheet_setbuf(struct SHEET *sht, unsigned char *buf, int xsize, int ysize, int col_inv);
+void sheet_updown(struct SHTCTL *ctl, struct SHEET *sht, int height);
+void sheet_refresh(struct SHTCTL *ctl);
+void sheet_slide(struct SHTCTL *ctl, struct SHEET *sht, int vx0, int vy0);
+void sheet_free(struct SHTCTL *ctl, struct SHEET *sht);

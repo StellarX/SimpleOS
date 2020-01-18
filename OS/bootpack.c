@@ -49,7 +49,7 @@ void HariMain(void)
 	sprintf(s, "memory %dMB   free : %dKB",
 			memtotal / (1024 * 1024), memman_total(memman) / 1024);
 	putfonts8_asc(buf_back, binfo->scrnx, 0, 32, COL8_FFFFFF, s);
-	sheet_refresh(shtctl);
+	sheet_refresh(shtctl, sht_back, 0, 0, binfo->scrnx, 48);
 	
 
 	
@@ -62,9 +62,9 @@ void HariMain(void)
 				i = fifo8_get(&keyfifo);
 				io_sti();//允许中断
 				sprintf(s, "%02X", i);
-				boxfill8(binfo->vram, binfo->scrnx, COL8_008484,  0, 16, 15, 31);
-				putfonts8_asc(binfo->vram, binfo->scrnx, 0, 16, COL8_FFFFFF, s);
-				sheet_refresh(shtctl);
+				boxfill8(buf_back, binfo->scrnx, COL8_008484,  0, 16, 15, 31);
+				putfonts8_asc(buf_back, binfo->scrnx, 0, 16, COL8_FFFFFF, s);
+				sheet_refresh(shtctl, sht_back, 0, 16, 16, 32);
 			} else if (fifo8_status(&mousefifo) != 0) {
 				i = fifo8_get(&mousefifo);
 				io_sti();//允许中断
@@ -80,10 +80,10 @@ void HariMain(void)
 					if ((mdec.btn & 0x04) != 0) {
 						s[2] = 'C';
 					}
-					boxfill8(binfo->vram, binfo->scrnx, COL8_008484, 32, 16, 32 + 15 * 8 - 1, 31);//画矩形背景
-					putfonts8_asc(binfo->vram, binfo->scrnx, 32, 16, COL8_FFFFFF, s);
+					boxfill8(buf_back, binfo->scrnx, COL8_008484, 32, 16, 32 + 15 * 8 - 1, 31);//画矩形背景
+					putfonts8_asc(buf_back, binfo->scrnx, 32, 16, COL8_FFFFFF, s);
 					/* 移动鼠标指针 */
-					boxfill8(binfo->vram, binfo->scrnx, COL8_008484, mx, my, mx + 15, my + 15); /* 隐藏鼠标*/
+					sheet_refresh(shtctl, sht_back, 32, 16, 32 + 15 * 8, 32);
 					mx += mdec.x;
 					my += mdec.y;
 					if (mx < 0) {
@@ -99,9 +99,10 @@ void HariMain(void)
 						my = binfo->scrny - 16;
 					}
 					sprintf(s, "(%3d, %3d)", mx, my);
-					boxfill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 0, 79, 15); /* 隐藏坐标（相当于刷新画面） */
-					putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s); /* 显示坐标 */
-					sheet_slide(shtctl, sht_mouse, mx, my); /* sheet_refreshを含む */
+					boxfill8(buf_back, binfo->scrnx, COL8_008484, 0, 0, 79, 15); /* 隐藏坐标（相当于刷新画面） */
+					putfonts8_asc(buf_back, binfo->scrnx, 0, 0, COL8_FFFFFF, s); /* 显示坐标 */
+					sheet_refresh(shtctl, sht_back, 0, 0, 80, 16);
+					sheet_slide(shtctl, sht_mouse, mx, my);
 				}
 			}
 		}

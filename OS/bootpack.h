@@ -152,7 +152,7 @@ struct SHEET {
 	struct SHTCTL *ctl;
 };                      //vx，vy：在画面上的坐标   col_inv 透明色色号    
 struct SHTCTL {
-	unsigned char *vram;//VRAM的地址
+	unsigned char *vram, *map;//VRAM的地址
 	int xsize, ysize, top;//画面的大小  top代表最上面图层的高度
 	struct SHEET *sheets[MAX_SHEETS];//用于存放我们准备的256个图层的结构体的地址
 	struct SHEET sheets0[MAX_SHEETS];//用于存放我们准备的256个图层的信息

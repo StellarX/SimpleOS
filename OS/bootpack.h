@@ -174,8 +174,9 @@ struct TIMER {
 	unsigned char data;
 };
 struct TIMERCTL {
-	unsigned int count;
-	struct TIMER timer[MAX_TIMER];
+	unsigned int count, next, using;// using记录现在的定时器中有几个处于活动中
+	struct TIMER *timers[MAX_TIMER];
+	struct TIMER timer0[MAX_TIMER];
 };
 extern struct TIMERCTL timerctl;
 void init_pit(void);

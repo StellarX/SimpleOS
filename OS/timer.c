@@ -76,7 +76,7 @@ void timer_settime(struct TIMER *timer, unsigned int timeout)
     return;
 }
 
-void inthandler20(int *esp)
+void inthandler20(int *esp)//定时器中断程序，设定的是1s产生100次中断
 {
 	io_out8(PIC0_OCW2, 0x60);	/* 把IRQ-00信号接收完了的信息通知给PIC */
 	timerctl.count++;

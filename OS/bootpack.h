@@ -20,7 +20,7 @@ int io_load_eflags(void);
 void io_store_eflags(int eflags);
 void load_gdtr(int limit, int addr);
 void load_idtr(int limit, int addr);
-int load_cr0(void);
+int load_cr0(void); 
 void store_cr0(int cr0);
 void asm_inthandler20(void);
 void asm_inthandler21(void);
@@ -167,13 +167,14 @@ void sheet_free(struct SHEET *sht);
 /* timer.c */
 #define MAX_TIMER		500
 struct TIMER {
+	struct TIMER *next;//下一个定时器的地址
 	unsigned int timeout, flags;
 	struct FIFO32 *fifo;
 	int data;
 };
 struct TIMERCTL {
-	unsigned int count, next, using;// using记录现在的定时器中有几个处于活动中
-	struct TIMER *timers[MAX_TIMER];
+	unsigned int count, next, using;//next 下一个超时时刻  using记录现在的定时器中有几个处于活动中
+	struct TIMER *t0;
 	struct TIMER timer0[MAX_TIMER];
 };
 extern struct TIMERCTL timerctl;

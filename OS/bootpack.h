@@ -28,14 +28,14 @@ void asm_inthandler27(void);
 void asm_inthandler2c(void);
 
 /* fifo.c */
-struct FIFO8 {
-	unsigned char *buf;
+struct FIFO32 {
+	int *buf;
 	int p, q, size, free, flags;//p：下一个数据写入地址，q：下一个数据读出地址  flag：记录缓冲区是否溢出
 };//free：缓冲区里没有数据的字节数  size：缓冲区的总字节数
-void fifo8_init(struct FIFO8 *fifo, int size, unsigned char *buf);
-int fifo8_put(struct FIFO8 *fifo, unsigned char data);
-int fifo8_get(struct FIFO8 *fifo);
-int fifo8_status(struct FIFO8 *fifo);
+void fifo32_init(struct FIFO32 *fifo, int size, int *buf);
+int fifo32_put(struct FIFO32 *fifo, int data);
+int fifo32_get(struct FIFO32 *fifo);
+int fifo32_status(struct FIFO32 *fifo);
 
 /* graphic.c */
 void init_palette(void);
@@ -110,8 +110,7 @@ void inthandler2c(int *esp);
 /* keyboard.c */
 void inthandler21(int *esp);
 void wait_KBC_sendready(void);
-void init_keyboard(void);
-extern struct FIFO8 keyfifo;
+void init_keyboard(struct FIFO32 *fifo, int data0);
 #define PORT_KEYDAT		0x0060//从编号为0x0060的设备（键盘）输入的8位信息是按键编码
 #define PORT_KEYCMD		0x0064
 
@@ -121,9 +120,8 @@ struct MOUSE_DEC {
 	int x, y, btn;//存放移动信息和鼠标按键状态
 };
 void inthandler2c(int *esp);
-void enable_mouse(struct MOUSE_DEC *mdec);
+void enable_mouse(struct FIFO32 *fifo, int data0, struct MOUSE_DEC *mdec);
 int mouse_decode(struct MOUSE_DEC *mdec, unsigned char dat);
-extern struct FIFO8 mousefifo;
 
 /* memory.c */
 #define MEMMAN_FREES		4090	
@@ -170,8 +168,8 @@ void sheet_free(struct SHEET *sht);
 #define MAX_TIMER		500
 struct TIMER {
 	unsigned int timeout, flags;
-	struct FIFO8 *fifo;
-	unsigned char data;
+	struct FIFO32 *fifo;
+	int data;
 };
 struct TIMERCTL {
 	unsigned int count, next, using;// using记录现在的定时器中有几个处于活动中
@@ -182,6 +180,6 @@ extern struct TIMERCTL timerctl;
 void init_pit(void);
 struct TIMER *timer_alloc(void);
 void timer_free(struct TIMER *timer);
-void timer_init(struct TIMER *timer, struct FIFO8 *fifo, unsigned char data);
+void timer_init(struct TIMER *timer, struct FIFO32 *fifo, int data);
 void timer_settime(struct TIMER *timer, unsigned int timeout);
 void inthandler20(int *esp);

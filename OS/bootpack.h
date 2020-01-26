@@ -173,7 +173,7 @@ struct TIMER {
 	int data;
 };
 struct TIMERCTL {
-	unsigned int count, next, using;//next 下一个超时时刻  using记录现在的定时器中有几个处于活动中
+	unsigned int count, next;//next 下一个超时时刻
 	struct TIMER *t0;
 	struct TIMER timer0[MAX_TIMER];
 };

@@ -23,6 +23,9 @@ Makefile：包括文件生成规则和命令
 make.bat：调用make.exe(这个内部的命令不懂)，而make.exe的作用是进入makefile文件，然后执行里面的命令
 
 改动说明：
+14.1
+启用VBE高分辨率新画面模式
+
 13.4
 使用哨兵简化timer_settime函数和定时器中断处理
 

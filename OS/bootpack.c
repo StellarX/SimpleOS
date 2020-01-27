@@ -198,3 +198,4 @@ void putfonts8_asc_sht(struct SHEET *sht, int x, int y, int c, int b, char *s, i
 	sheet_refresh(sht, x, y, x + l * 8, y + 16);
 	return;
 }
+

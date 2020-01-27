@@ -42,3 +42,4 @@ void init_keyboard(struct FIFO32 *fifo, int data0)
 	io_out8(PORT_KEYDAT, KBC_MODE);
 	return;
 }
+

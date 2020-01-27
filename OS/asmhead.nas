@@ -17,14 +17,23 @@ VRAM	EQU		0x0ff8			; 这个地址用于保存显存的开始地址
 
 ;画面模式设置
 
-		MOV		AL,0x13			; VGA显卡，320x200x8位彩色
-		MOV		AH,0x00
-		INT		0x10	
-		MOV		BYTE [VMODE],8	; 将此画面模式信息保存到内存
-		MOV		WORD [SCRNX],320
-		MOV		WORD [SCRNY],200
-		MOV		DWORD [VRAM],0x000a0000
+;		MOV     BX,0x4101       ; VBE的640x480x8bi彩色   画面模式号码
+;       MOV     AX,0x4f02
+;		INT		0x10	
+;		MOV		BYTE [VMODE],8	; 将此画面模式信息保存到内存
+;		MOV		WORD [SCRNX],640
+;		MOV		WORD [SCRNY],480
+;		MOV		DWORD [VRAM],0xe0000000
 
+		MOV     BX,0x4105       ; VBE的1024x768x8bit彩色
+		MOV     AX,0x4f02
+		INT     0x10
+		MOV     BYTE [VMODE],8  ; 记下画面模式（参考C语言）
+		MOV     WORD [SCRNX],1024
+		MOV     WORD [SCRNY],768
+		MOV     DWORD [VRAM],0xe0000000
+		
+		
 ; 用BIOS取得键盘上各种LED指示灯的状态
 
 		MOV		AH,0x02

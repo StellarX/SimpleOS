@@ -1,6 +1,16 @@
 ; haribote-os boot asm
 ; TAB=4
 
+[INSTRSET "i486p"]				; “想要使用486指令”的叙述
+
+VBEMODE	EQU		0x105			; 1024 x  768 x 8bitカラー
+; （画面モード一覧）
+;	0x100 :  640 x  400 x 8bitカラー
+;	0x101 :  640 x  480 x 8bitカラー
+;	0x103 :  800 x  600 x 8bitカラー
+;	0x105 : 1024 x  768 x 8bitカラー
+;	0x107 : 1280 x 1024 x 8bitカラー
+
 BOTPAK	EQU		0x00280000		; bootpack的装载处
 DSKCAC	EQU		0x00100000		; 磁盘缓存的地方
 DSKCAC0	EQU		0x00008000		; 磁盘高速缓存的场所(实时模式)
@@ -15,27 +25,66 @@ VRAM	EQU		0x0ff8			; 这个地址用于保存显存的开始地址
 
 		ORG		0xc200			; 把程序装载到内存的哪
 
-;画面模式设置
+; VBE存在确认
 
-;		MOV     BX,0x4101       ; VBE的640x480x8bi彩色   画面模式号码
-;       MOV     AX,0x4f02
-;		INT		0x10	
-;		MOV		BYTE [VMODE],8	; 将此画面模式信息保存到内存
-;		MOV		WORD [SCRNX],640
-;		MOV		WORD [SCRNY],480
-;		MOV		DWORD [VRAM],0xe0000000
+		MOV		AX,0x9000
+		MOV		ES,AX
+		MOV		DI,0
+		MOV		AX,0x4f00
+		INT		0x10
+		CMP		AX,0x004f
+		JNE		scrn320  ;要是AX没有变为这个值，就只能使用320×200的画面
 
-		MOV     BX,0x4105       ; VBE的1024x768x8bit彩色
-		MOV     AX,0x4f02
-		INT     0x10
-		MOV     BYTE [VMODE],8  ; 记下画面模式（参考C语言）
-		MOV     WORD [SCRNX],1024
-		MOV     WORD [SCRNY],768
-		MOV     DWORD [VRAM],0xe0000000
-		
+; 检查VBE的版本
+
+		MOV		AX,[ES:DI+4]
+		CMP		AX,0x0200
+		JB		scrn320			; if (AX < 0x0200) goto scrn320
+
+; 取得画面模式信息
+
+		MOV		CX,VBEMODE
+		MOV		AX,0x4f01
+		INT		0x10
+		CMP		AX,0x004f
+		JNE		scrn320 ;如果它是0x004f以外的值，就意味着所指定的画面模式不能使用
+
+; 画面模式信息的确认
+
+		CMP		BYTE [ES:DI+0x19],8
+		JNE		scrn320
+		CMP		BYTE [ES:DI+0x1b],4
+		JNE		scrn320
+		MOV		AX,[ES:DI+0x00]
+		AND		AX,0x0080
+		JZ		scrn320			; 模式属性的bit7是0，所以放弃
+
+; 以上条件都满足，就切换画面
+
+		MOV		BX,VBEMODE+0x4000
+		MOV		AX,0x4f02
+		INT		0x10
+		MOV		BYTE [VMODE],8	; 画面モードをメモする（C言語が参照する）
+		MOV		AX,[ES:DI+0x12]
+		MOV		[SCRNX],AX
+		MOV		AX,[ES:DI+0x14]
+		MOV		[SCRNY],AX
+		MOV		EAX,[ES:DI+0x28]
+		MOV		[VRAM],EAX
+		JMP		keystatus
+
+scrn320:
+		MOV		AL,0x13			; VGAグラフィックス、320x200x8bitカラー
+		MOV		AH,0x00
+		INT		0x10
+		MOV		BYTE [VMODE],8	; 画面モードをメモする（C言語が参照する）
+		MOV		WORD [SCRNX],320
+		MOV		WORD [SCRNY],200
+		MOV		DWORD [VRAM],0x000a0000
 		
 ; 用BIOS取得键盘上各种LED指示灯的状态
 
+keystatus:
 		MOV		AH,0x02
 		INT		0x16 			; keyboard BIOS
 		MOV		[LEDS],AL		
@@ -63,8 +112,6 @@ VRAM	EQU		0x0ff8			; 这个地址用于保存显存的开始地址
 		CALL	waitkbdout		;这句话是为了等待完成执行指令
 
 ; 切换到保护模式
-
-[INSTRSET "i486p"]				; “想要使用486指令”的叙述
 
 		LGDT	[GDTR0]			; 设定临时GDT
 		MOV		EAX,CR0

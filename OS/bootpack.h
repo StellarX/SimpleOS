@@ -190,7 +190,27 @@ void timer_settime(struct TIMER *timer, unsigned int timeout);
 void inthandler20(int *esp);
 
 /* mtask.c */
-extern struct TIMER *mt_timer;
-void mt_init(void);
-void mt_taskswitch(void);
+#define MAX_TASKS		1000	/* 最大任务数量 */
+#define TASK_GDT0		3		/* 定义从GDT的几号开始分配给TSS */
+struct TSS32 {
+	int backlink, esp0, ss0, esp1, ss1, esp2, ss2, cr3;//与任务设置相关的信息，在任务切换的时候不会被写入（backlink除外，某些情况下是会被写入的
+	int eip, eflags, eax, ecx, edx, ebx, esp, ebp, esi, edi;//32位寄存器
+	int es, cs, ss, ds, fs, gs;//16位寄存器
+	int ldtr, iomap;//有关任务设置的部分，任务切换时不会被写入内存
+};//TSS共包含26个int成员，总计104字节（摘自CPU的技术资料）
+struct TASK {
+	int sel, flags; /* sel用来存放GDT的编号 */
+	struct TSS32 tss;
+};
+struct TASKCTL {
+	int running; /* 正在运行的任务数量 */
+	int now; /* 当前正在运行的是哪个任务 */
+	struct TASK *tasks[MAX_TASKS];
+	struct TASK tasks0[MAX_TASKS];
+};
+extern struct TIMER *task_timer;
+struct TASK *task_init(struct MEMMAN *memman);
+struct TASK *task_alloc(void);
+void task_run(struct TASK *task);
+void task_switch(void);
 

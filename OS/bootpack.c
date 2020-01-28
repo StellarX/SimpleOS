@@ -4,14 +4,6 @@
 void make_window8(unsigned char *buf, int xsize, int ysize, char *title);
 void putfonts8_asc_sht(struct SHEET *sht, int x, int y, int c, int b, char *s, int l);
 void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c);
-
-struct TSS32 {
-	int backlink, esp0, ss0, esp1, ss1, esp2, ss2, cr3;//与任务设置相关的信息，在任务切换的时候不会被写入（backlink除外，某些情况下是会被写入的
-	int eip, eflags, eax, ecx, edx, ebx, esp, ebp, esi, edi;//32位寄存器
-	int es, cs, ss, ds, fs, gs;//16位寄存器
-	int ldtr, iomap;//有关任务设置的部分，任务切换时不会被写入内存
-};
-
 void task_b_main(struct SHEET *sht_back);
 
 void HariMain(void)
@@ -21,7 +13,7 @@ void HariMain(void)
 	char s[40];
 	int fifobuf[128];
 	struct TIMER *timer, *timer2, *timer3;
-	int mx, my, i, cursor_x, cursor_c, task_b_esp;
+	int mx, my, i, cursor_x, cursor_c;
 	unsigned int memtotal;
 	struct MOUSE_DEC mdec;
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
@@ -36,8 +28,7 @@ void HariMain(void)
 		0,   0,   0,   0,   0,   0,   0,   '7', '8', '9', '-', '4', '5', '6', '+', '1',
 		'2', '3', '0', '.'
 	};
-	struct TSS32 tss_a, tss_b;
-	struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
+	struct TASK *task_b;
 	
 	init_gdtidt();
 	init_pic();
@@ -94,36 +85,19 @@ void HariMain(void)
 			memtotal / (1024 * 1024), memman_total(memman) / 1024);
 	putfonts8_asc_sht(sht_back, 0, 32, COL8_FFFFFF, COL8_008484, s, 40);
 	
-	tss_a.ldtr = 0;
-	tss_a.iomap = 0x40000000;
-	tss_b.ldtr = 0;
-	tss_b.iomap = 0x40000000;
-	//将tss注册到gdt中
-	set_segmdesc(gdt + 3, 103, (int) &tss_a, AR_TSS32);//将tss_a定义在gdt的3号，段长限制为103字节，tss_b也采用类似的定义
-	set_segmdesc(gdt + 4, 103, (int) &tss_b, AR_TSS32);
-	load_tr(3 * 8);//任务寄存器，表示当前在运行哪个任务
-
-	task_b_esp = memman_alloc_4k(memman, 64 * 1024) + 64 * 1024 - 8;//专门为任务B所定义的栈
+	task_init(memman);
+	task_b = task_alloc();
+	task_b->tss.esp = memman_alloc_4k(memman, 64 * 1024) + 64 * 1024 - 8;//专门为任务B所定义的栈
 //分配64KB内存，并计算出栈底内存地址。向栈PUSH数据的动作，ESP中存入的应该栈末尾的地址，而不是栈开头的地址
-
-	tss_b.eip = (int) &task_b_main;//切换到这个任务的时候，要从哪里开始运行
-	tss_b.eflags = 0x00000202; /* IF = 1; */
-	tss_b.eax = 0;
-	tss_b.ecx = 0;
-	tss_b.edx = 0;
-	tss_b.ebx = 0;
-	tss_b.esp = task_b_esp;
-	tss_b.ebp = 0;
-	tss_b.esi = 0;
-	tss_b.edi = 0;
-	tss_b.es = 1 * 8;
-	tss_b.cs = 2 * 8;
-	tss_b.ss = 1 * 8;
-	tss_b.ds = 1 * 8;
-	tss_b.fs = 1 * 8;
-	tss_b.gs = 1 * 8;
-	*((int *) (task_b_esp + 4)) = (int) sht_back;
-	mt_init();
+	task_b->tss.eip = (int) &task_b_main;//切换到这个任务的时候，要从哪里开始运行
+	task_b->tss.es = 1 * 8;
+	task_b->tss.cs = 2 * 8;
+	task_b->tss.ss = 1 * 8;
+	task_b->tss.ds = 1 * 8;
+	task_b->tss.fs = 1 * 8;
+	task_b->tss.gs = 1 * 8;
+	*((int *) (task_b->tss.esp + 4)) = (int) sht_back;
+	task_run(task_b);
 	
 	for (;;) {
 		io_cli();//屏蔽中断

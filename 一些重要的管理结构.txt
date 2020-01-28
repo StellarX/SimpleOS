@@ -46,21 +46,29 @@ struct TIMERCTL {
 
 多任务控制结构：
 #define MAX_TASKS		1000	/* 最大任务数量 */
+#define MAX_TASKS_LV    100		/*每个LEVEL我们设定最多允许创建100个任务*/
+#define MAX_TASKLEVELS  10		/*总共10个LEVEL*/
 #define TASK_GDT0		3	/* 定义从GDT的几号开始分配给TSS */
 struct TSS32 {
-	int backlink, esp0, ss0, esp1, ss1, esp2, ss2, cr3;//与任务设置相关的信息，在任务切换的时候不会被写入（backlink除外，某些情况下是会被写入的）
+	int backlink, esp0, ss0, esp1, ss1, esp2, ss2, cr3;//与任务设置相关的信息，在任务切换的时候不会被写入（backlink除外，某些情况下是会被写入的
 	int eip, eflags, eax, ecx, edx, ebx, esp, ebp, esi, edi;//32位寄存器
 	int es, cs, ss, ds, fs, gs;//16位寄存器
 	int ldtr, iomap;//有关任务设置的部分，任务切换时不会被写入内存
 };//TSS共包含26个int成员，总计104字节（摘自CPU的技术资料）
 struct TASK {
 	int sel, flags; /* sel用来存放GDT的编号 */
+	int priority;
 	struct TSS32 tss;
 };
+struct TASKLEVEL {
+    int running; /*正在运行的任务数量*/
+    int now; /*这个变量用来记录当前正在运行的是哪个任务*/
+    struct TASK *tasks[MAX_TASKS_LV];
+};
 struct TASKCTL {
-	int running; /* 正在运行的任务数量 */
-	int now; /* 当前正在运行的是哪个任务 */
-	struct TASK *tasks[MAX_TASKS];
+	int now_lv; /*现在活动中的LEVEL */
+    char lv_change; /*在下次任务切换时是否需要改变LEVEL */
+	struct TASKLEVEL level[MAX_TASKLEVELS];
 	struct TASK tasks0[MAX_TASKS];
 };
 

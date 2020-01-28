@@ -33,7 +33,7 @@ int fifo32_put(struct FIFO32 *fifo, int data)
 	fifo->free--;//剩余空间--
 	if (fifo->task != 0) {
         if (fifo->task->flags != 2) { /*如果任务处于休眠状态*/
-            task_run(fifo->task); /*将任务唤醒*/
+            task_run(fifo->task, -1, 0); /*将任务唤醒  -1：不改变level*/
         }
     } 
 	return 0;

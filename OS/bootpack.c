@@ -49,6 +49,7 @@ void HariMain(void)
 	shtctl = shtctl_init(memman, binfo->vram, binfo->scrnx, binfo->scrny);
 	task_a = task_init(memman);
 	fifo.task = task_a;//这里将task_a作为有数据写入时需要唤醒的任务
+	task_run(task_a, 1, 0);//1：层级  0：不改变优先级
 	
 	/* sht_back */
 	sht_back  = sheet_alloc(shtctl);
@@ -74,7 +75,7 @@ void HariMain(void)
 		task_b[i]->tss.fs = 1 * 8;
 		task_b[i]->tss.gs = 1 * 8;
 		*((int *) (task_b[i]->tss.esp + 4)) = (int) sht_win_b[i];
-		task_run(task_b[i]);
+		task_run(task_b[i], 2, i + 1);
 	}
 
 	/* sht_win */

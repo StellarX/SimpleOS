@@ -12,7 +12,7 @@ struct TSS32 {
 	int ldtr, iomap;//有关任务设置的部分，任务切换时不会被写入内存
 };
 
-void task_b_main(void);
+void task_b_main(struct SHEET *sht_back);
 
 void HariMain(void)
 {
@@ -20,7 +20,7 @@ void HariMain(void)
 	struct FIFO32 fifo;
 	char s[40];
 	int fifobuf[128];
-	struct TIMER *timer, *timer2, *timer3, *timer_ts;
+	struct TIMER *timer, *timer2, *timer3;
 	int mx, my, i, cursor_x, cursor_c, task_b_esp;
 	unsigned int memtotal;
 	struct MOUSE_DEC mdec;
@@ -56,11 +56,8 @@ void HariMain(void)
 	timer_init(timer2, &fifo, 3);
 	timer_settime(timer2, 300);
 	timer3 = timer_alloc();
-	timer_init(timer3, &fifo, 1);
+	timer_init(timer3, &fifo, 1);//这个1类似一个代号
 	timer_settime(timer3, 50);//0.5s
-	timer_ts = timer_alloc();
-	timer_init(timer_ts, &fifo, 2);//这个2只是类似于一个代号
-	timer_settime(timer_ts, 2);//0.02s
 	
 	memtotal = memtest(0x00400000, 0xbfffffff);
 	memman_init(memman);
@@ -106,7 +103,7 @@ void HariMain(void)
 	set_segmdesc(gdt + 4, 103, (int) &tss_b, AR_TSS32);
 	load_tr(3 * 8);//任务寄存器，表示当前在运行哪个任务
 
-	task_b_esp = memman_alloc_4k(memman, 64 * 1024) + 64 * 1024;//专门为任务B所定义的栈
+	task_b_esp = memman_alloc_4k(memman, 64 * 1024) + 64 * 1024 - 8;//专门为任务B所定义的栈
 //分配64KB内存，并计算出栈底内存地址。向栈PUSH数据的动作，ESP中存入的应该栈末尾的地址，而不是栈开头的地址
 
 	tss_b.eip = (int) &task_b_main;//切换到这个任务的时候，要从哪里开始运行
@@ -125,7 +122,8 @@ void HariMain(void)
 	tss_b.ds = 1 * 8;
 	tss_b.fs = 1 * 8;
 	tss_b.gs = 1 * 8;
-	*((int *) 0x0fec) = (int) sht_back;
+	*((int *) (task_b_esp + 4)) = (int) sht_back;
+	mt_init();
 	
 	for (;;) {
 		io_cli();//屏蔽中断
@@ -134,10 +132,7 @@ void HariMain(void)
 		} else {
 			i = fifo32_get(&fifo);
 			io_sti();//允许中断
-			if (i == 2) {
-                farjmp(0, 4 * 8);//切换任务
-                timer_settime(timer_ts, 2);//将计时器重新设定到0.02秒之后，以便让程序在返回0.02秒之后，再次执行任务切换
-            } else if (256 <= i && i <= 511) { /* 键盘数据*/
+			if (256 <= i && i <= 511) { /* 键盘数据*/
 				sprintf(s, "%02X", i - 256);
 				putfonts8_asc_sht(sht_back, 0, 16, COL8_FFFFFF, COL8_008484, s, 2);
 				
@@ -198,7 +193,6 @@ void HariMain(void)
 				}
 			} else if (i == 10) {
 				putfonts8_asc_sht(sht_back, 0, 64, COL8_FFFFFF, COL8_008484, "10[sec]", 7);
-				farjmp(0, 4 * 8);
 			} else if (i == 3) {
 				putfonts8_asc_sht(sht_back, 0, 80, COL8_FFFFFF, COL8_008484, "3[sec]", 6);
 			} else if (i <= 1) { /* 光标用定时器 */
@@ -290,33 +284,38 @@ void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c)
 	return;
 }
 
-void task_b_main(void)
+void task_b_main(struct SHEET *sht_back)
 {
 	struct FIFO32 fifo;
-    struct TIMER *timer_ts;
-    int i, fifobuf[128], count = 0;
-    char s[11];
-    struct SHEET *sht_back;
+    struct TIMER *timer_put, *timer_1s;
+    int i, fifobuf[128], count = 0, count0 = 0;
+    char s[12];
 
     fifo32_init(&fifo, 128, fifobuf);
-    timer_ts = timer_alloc();
-    timer_init(timer_ts, &fifo, 1);
-    timer_settime(timer_ts, 2);
-	sht_back = (struct SHEET *) *((int *) 0x0fec);
-	
+    timer_put = timer_alloc();
+    timer_init(timer_put, &fifo, 1);//控制count显示刷新间隔的定时器  
+    timer_settime(timer_put, 1);//0.01s
+	timer_1s = timer_alloc();
+    timer_init(timer_1s, &fifo, 100);
+    timer_settime(timer_1s, 100);
+
     for (;;) {
-		count++;
-        sprintf(s, "%10d", count);
-        putfonts8_asc_sht(sht_back, 0, 144, COL8_FFFFFF, COL8_008484, s, 10);
+        count++;
         io_cli();
         if (fifo32_status(&fifo) == 0) {
             io_sti();
         } else {
             i = fifo32_get(&fifo);
             io_sti();
-            if (i == 1) { /*任务切换*/
-                farjmp(0, 3 * 8);
-                timer_settime(timer_ts, 2);
+            if (i == 1) {
+                sprintf(s, "%11d", count);
+                putfonts8_asc_sht(sht_back, 0, 144, COL8_FFFFFF, COL8_008484, s, 11);
+                timer_settime(timer_put, 1);
+            } else if (i == 100) {
+                sprintf(s, "%11d", count - count0);
+                putfonts8_asc_sht(sht_back, 0, 128, COL8_FFFFFF, COL8_008484, s, 11);
+                count0 = count;
+                timer_settime(timer_1s, 100);
             }
         }
     }

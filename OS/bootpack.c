@@ -28,12 +28,12 @@ void HariMain(void)
 		0,   0,   0,   0,   0,   0,   0,   '7', '8', '9', '-', '4', '5', '6', '+', '1',
 		'2', '3', '0', '.'
 	};
-	struct TASK *task_b;
+	struct TASK *task_a, *task_b;
 	
 	init_gdtidt();
 	init_pic();
 	io_sti();//IDT/PIC的初始化结束了，设置中断标志位=1，允许中断
-	fifo32_init(&fifo, 128, fifobuf);
+	fifo32_init(&fifo, 128, fifobuf, 0);//这里将0作为有数据写入时需要唤醒的任务，也就是禁用自动唤醒功能，因为多任务初始化还没有完成
 	init_pit();
 	init_keyboard(&fifo, 256);
 	enable_mouse(&fifo, 512, &mdec);
@@ -84,8 +84,9 @@ void HariMain(void)
 	sprintf(s, "memory %dMB   free : %dKB",
 			memtotal / (1024 * 1024), memman_total(memman) / 1024);
 	putfonts8_asc_sht(sht_back, 0, 32, COL8_FFFFFF, COL8_008484, s, 40);
-	
-	task_init(memman);
+
+	task_a = task_init(memman);
+	fifo.task = task_a;////这里将task_a作为有数据写入时需要唤醒的任务
 	task_b = task_alloc();
 	task_b->tss.esp = memman_alloc_4k(memman, 64 * 1024) + 64 * 1024 - 8;//专门为任务B所定义的栈
 //分配64KB内存，并计算出栈底内存地址。向栈PUSH数据的动作，ESP中存入的应该栈末尾的地址，而不是栈开头的地址
@@ -102,14 +103,14 @@ void HariMain(void)
 	for (;;) {
 		io_cli();//屏蔽中断
 		if (fifo32_status(&fifo) == 0) {
-			io_stihlt();//允许中断
+			task_sleep(task_a);//休眠
+			io_sti();//允许中断
 		} else {
 			i = fifo32_get(&fifo);
 			io_sti();//允许中断
 			if (256 <= i && i <= 511) { /* 键盘数据*/
 				sprintf(s, "%02X", i - 256);
 				putfonts8_asc_sht(sht_back, 0, 16, COL8_FFFFFF, COL8_008484, s, 2);
-				
 				if (i < 256 + 0x54) {
 					if (keytable[i - 256] != 0 && cursor_x < 144) {/* 一般字符 */
 						s[0] = keytable[i - 256];
@@ -165,11 +166,13 @@ void HariMain(void)
                         sheet_slide(sht_win, mx - 80, my - 8);
 					}
 				}
-			} else if (i == 10) {
+			} 
+			else if (i == 10) {
 				putfonts8_asc_sht(sht_back, 0, 64, COL8_FFFFFF, COL8_008484, "10[sec]", 7);
 			} else if (i == 3) {
 				putfonts8_asc_sht(sht_back, 0, 80, COL8_FFFFFF, COL8_008484, "3[sec]", 6);
-			} else if (i <= 1) { /* 光标用定时器 */
+			} else if (i <= 1) 
+			{ /* 光标用定时器 */
 				if (i != 0) {
 					timer_init(timer3, &fifo, 0); /* 下面设定0 */
 					cursor_c = COL8_000000;
@@ -265,7 +268,7 @@ void task_b_main(struct SHEET *sht_back)
     int i, fifobuf[128], count = 0, count0 = 0;
     char s[12];
 
-    fifo32_init(&fifo, 128, fifobuf);
+    fifo32_init(&fifo, 128, fifobuf, 0);//task_b_main不需要让FIFO唤醒，因此任务参数指定为0
     timer_put = timer_alloc();
     timer_init(timer_put, &fifo, 1);//控制count显示刷新间隔的定时器  
     timer_settime(timer_put, 1);//0.01s

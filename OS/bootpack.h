@@ -34,8 +34,9 @@ void farjmp(int eip, int cs);
 struct FIFO32 {
 	int *buf;
 	int p, q, size, free, flags;//p：下一个数据写入地址，q：下一个数据读出地址  flag：记录缓冲区是否溢出
+	struct TASK *task;
 };//free：缓冲区里没有数据的字节数  size：缓冲区的总字节数
-void fifo32_init(struct FIFO32 *fifo, int size, int *buf);
+void fifo32_init(struct FIFO32 *fifo, int size, int *buf, struct TASK *task);
 int fifo32_put(struct FIFO32 *fifo, int data);
 int fifo32_get(struct FIFO32 *fifo);
 int fifo32_status(struct FIFO32 *fifo);
@@ -213,4 +214,5 @@ struct TASK *task_init(struct MEMMAN *memman);
 struct TASK *task_alloc(void);
 void task_run(struct TASK *task);
 void task_switch(void);
+void task_sleep(struct TASK *task);
 

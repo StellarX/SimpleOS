@@ -204,6 +204,7 @@ struct TSS32 {
 struct TASK {
 	int sel, flags; /* sel用来存放GDT的编号  flag： 1休眠 2活动中*/
 	int priority, level;
+	struct FIFO32 fifo;
 	struct TSS32 tss;
 };
 struct TASKLEVEL {
@@ -224,3 +225,8 @@ void task_run(struct TASK *task, int level, int priority);
 void task_switch(void);
 void task_sleep(struct TASK *task);
 
+void task_idle(void);//闲置的任务
+void task_switchsub(void);//在任务切换时决定接下来切换到哪个LEVEL
+void task_remove(struct TASK *task);//从struct TASKLEVEL中删除一个任务
+void task_add(struct TASK *task);//向struct TASKLEVEL中添加一个任务
+struct TASK *task_now(void);//返回现在活动中的struct TASK的内存地址

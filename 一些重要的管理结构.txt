@@ -61,13 +61,13 @@ struct TASK {
 	struct TSS32 tss;
 };
 struct TASKLEVEL {
-    int running; /*正在运行的任务数量*/
-    int now; /*这个变量用来记录当前正在运行的是哪个任务*/
-    struct TASK *tasks[MAX_TASKS_LV];
+ 	   int running; /*正在运行的任务数量*/
+  	  int now; /*这个变量用来记录当前正在运行的是哪个任务*/
+   	 struct TASK *tasks[MAX_TASKS_LV];
 };
 struct TASKCTL {
 	int now_lv; /*现在活动中的LEVEL */
-    char lv_change; /*在下次任务切换时是否需要改变LEVEL */
+    	char lv_change; /*在下次任务切换时是否需要改变LEVEL */
 	struct TASKLEVEL level[MAX_TASKLEVELS];
 	struct TASK tasks0[MAX_TASKS];
 };

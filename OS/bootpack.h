@@ -1,7 +1,7 @@
 /* asmhead.nas */
 struct BOOTINFO { /* 0x0ff0-0x0fff */
 	char cyls; /* 启动区读硬盘读到何处为止 */
-	char leds; /* 启动时键盘LED的状态  */
+	char leds; /* 启动时键盘LED的状态  1111 1111 */ 
 	char vmode; /* 显卡模式为多少位彩色 */
 	char reserve;
 	short scrnx, scrny; //2B * 2

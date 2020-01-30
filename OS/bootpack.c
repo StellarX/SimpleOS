@@ -187,15 +187,25 @@ void HariMain(void)
                         fifo32_put(&task_cons->fifo, 8 + 256);
 					}
 				}
+				if (i == 256 + 0x1c) {  /*回车键*/
+                    if (key_to != 0) {  /*发送至命令行窗口*/
+                        fifo32_put(&task_cons->fifo, 10 + 256);
+                    }
+				}
 				if (i == 256 + 0x0f) { /* Tab键 切换字符输入位置*/
                     if (key_to == 0) {
                         key_to = 1;
                         make_wtitle8(buf_win,  sht_win->bxsize,  "task_a",  0);
                         make_wtitle8(buf_cons, sht_cons->bxsize, "console", 1);
-                    } else {
+						cursor_c = -1; /* 不显示光标 */
+						boxfill8(sht_win->buf, sht_win->bxsize, COL8_FFFFFF, cursor_x, 28, cursor_x + 7, 43);
+						fifo32_put(&task_cons->fifo, 2); /*向任务b发送    2表示命令行窗口光标ON */
+				    } else {
                         key_to = 0;
                         make_wtitle8(buf_win,  sht_win->bxsize,  "task_a",  1);
                         make_wtitle8(buf_cons, sht_cons->bxsize, "console", 0);
+						cursor_c = COL8_000000; /*显示光标*/
+						fifo32_put(&task_cons->fifo, 3); /*命令行窗口光标OFF */
                     }
                     sheet_refresh(sht_win,  0, 0, sht_win->bxsize,  21);
                     sheet_refresh(sht_cons, 0, 0, sht_cons->bxsize, 21);
@@ -235,7 +245,9 @@ void HariMain(void)
                     io_out8(PORT_KEYDAT, keycmd_wait);
 /*到此结束*/    }
 				/* 光标再显示 */
-				boxfill8(sht_win->buf, sht_win->bxsize, cursor_c, cursor_x, 28, cursor_x + 7, 43);
+				if (cursor_c >= 0) {
+                    boxfill8(sht_win->buf, sht_win->bxsize, cursor_c, cursor_x, 28, cursor_x + 7, 43);
+				}
 				sheet_refresh(sht_win, cursor_x, 28, cursor_x + 8, 44);
 			}
 			else if (512 <= i && i <= 767) { /* 鼠标数据*/
@@ -280,14 +292,20 @@ void HariMain(void)
 			{ /* 光标用定时器 */
 				if (i != 0) {
 					timer_init(timer, &fifo, 0); /* 下面设定0 */
-					cursor_c = COL8_000000;
+					if (cursor_c >= 0) {
+                        cursor_c = COL8_000000;
+                    }
 				} else {
 					timer_init(timer, &fifo, 1); /* 下面设定1 */
-					cursor_c = COL8_FFFFFF;
+					if (cursor_c >= 0) {
+                        cursor_c = COL8_FFFFFF;
+                    }
 				}
 				timer_settime(timer, 50);
-				boxfill8(sht_win->buf, sht_win->bxsize, cursor_c, cursor_x, 28, cursor_x + 7, 43);
-				sheet_refresh(sht_win, cursor_x, 28, cursor_x + 8, 44);
+				if (cursor_c >= 0) {
+                    boxfill8(sht_win->buf, sht_win->bxsize, cursor_c, cursor_x, 28, cursor_x + 7, 43);
+                    sheet_refresh(sht_win, cursor_x, 28, cursor_x + 8, 44);
+				}
 			}
 		}
 	}
@@ -383,7 +401,7 @@ void console_task(struct SHEET *sheet)
 {
 	struct TIMER *timer;
 	struct TASK *task = task_now();
-	int i, fifobuf[128], cursor_x = 16, cursor_c = COL8_000000;
+	int i, fifobuf[128], cursor_x = 16, cursor_c = -1, cursor_y = 28;
     char s[2];
 	
 	fifo32_init(&task->fifo, 128, fifobuf, task);
@@ -405,35 +423,58 @@ void console_task(struct SHEET *sheet)
 			if (i <= 1) { /* 光标用定时器 */
 				if (i != 0) {
 					timer_init(timer, &task->fifo, 0); /* 下次置0  */
-					cursor_c = COL8_FFFFFF;
+					if (cursor_c >= 0) {
+                        cursor_c = COL8_FFFFFF;
+                    }
 				} else {
 					timer_init(timer, &task->fifo, 1); /* 下次置1 */
-					cursor_c = COL8_000000;
+					if (cursor_c >= 0) {
+                        cursor_c = COL8_000000;
+                    }
 				}
 				timer_settime(timer, 50);
 			}
+			if (i == 2) {   /*光标ON */    /*从此开始*/
+                cursor_c = COL8_FFFFFF;
+            }
+            if (i == 3) {   /*光标OFF */
+                boxfill8(sheet->buf, sheet->bxsize, COL8_000000, cursor_x, 28, cursor_x + 7, 43);
+                cursor_c = -1;
+            } 
 			if (256 <= i && i <= 511) { /*键盘数据（通过任务A） */
                 if (i == 8 + 256) {
                     /*退格键*/
                     if (cursor_x > 16) {
                         /*用空白擦除光标后将光标前移一位*/
-                        putfonts8_asc_sht(sheet, cursor_x, 28, COL8_FFFFFF, COL8_000000, " ", 1);
+                        putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, " ", 1);
                         cursor_x -= 8;
                     }
-                } else {
+                } else if (i == 10 + 256) {
+                    /*回车键*/
+                    if (cursor_y < 28 + 112) {
+                        /*用空格将光标擦除*/
+                        putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, " ", 1);
+                        cursor_y += 16;
+                        /*显示提示符*/
+                        putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, ">", 1);
+                        cursor_x = 16;
+					}
+				} else {
                     /*一般字符*/
                     if (cursor_x < 240) {
                         /*显示一个字符之后将光标后移一位  */
                         s[0] = i - 256;
                         s[1] = 0;
-                        putfonts8_asc_sht(sheet, cursor_x, 28, COL8_FFFFFF, COL8_000000, s, 1);
+                        putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, s, 1);
                         cursor_x += 8;
                     }
                 }
             }
 			 /*重新显示光标*/
-			boxfill8(sheet->buf, sheet->bxsize, cursor_c, cursor_x, 28, cursor_x + 7, 43);
-			sheet_refresh(sheet, cursor_x, 28, cursor_x + 8, 44);
+			if (cursor_c >= 0) {    /*从此开始*/
+                boxfill8(sheet->buf, sheet->bxsize, cursor_c, cursor_x, cursor_y, cursor_x + 7, cursor_y+15);
+            }
+			sheet_refresh(sheet, cursor_x, cursor_y, cursor_x + 8, cursor_y+16);
 		}
 	}
 }

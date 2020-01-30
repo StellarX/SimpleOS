@@ -22,9 +22,13 @@ os源代码：
 	timer.c:定时器相关（含定时器中断处理程序）
 	mtask.c：多任务相关
 	hankaku.txt: 字体数据
+	console.c：命令行窗口任务相关
+	window.c：窗口相关函数
+	file.c：命令行指令type中，文件内容读取相关函数
 Makefile：包括文件生成规则和命令
 make.bat：调用make.exe(这个内部的命令不懂)，而make.exe的作用是进入makefile文件，然后执行里面的命令
 
 其他：
 文件编译过程图：https://www.processon.com/view/link/5bac826ee4b0bd4db94e91c1
 GDT表模型：https://www.processon.com/view/link/5bad7f8fe4b0fe81b6499b99
+多任务控制结构示意图：https://www.processon.com/view/link/5e305525e4b00fbcc461e8a7

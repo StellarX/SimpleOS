@@ -8,6 +8,7 @@ struct BOOTINFO { /* 0x0ff0-0x0fff */
 	char *vram;  //4B  当前模式的显存起始地址
 };
 #define ADR_BOOTINFO	0x00000ff0
+#define ADR_DISKIMG     0x00100000
 
 /* naskfunc.nas */
 void io_hlt(void);

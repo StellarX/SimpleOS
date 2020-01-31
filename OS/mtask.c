@@ -5,6 +5,73 @@
 struct TASKCTL *taskctl;
 struct TIMER *task_timer;//任务切换间隔时间定时器
 
+struct TASK *task_now(void)//返回现在活动中的struct TASK的内存地址
+{
+    struct TASKLEVEL *tl = &taskctl->level[taskctl->now_lv];//先取得当前活动的层级
+    return tl->tasks[tl->now];
+}
+
+void task_add(struct TASK *task)//向struct TASKLEVEL中添加一个任务
+{
+    struct TASKLEVEL *tl = &taskctl->level[task->level];
+    tl->tasks[tl->running] = task;//添加到最后
+    tl->running++;
+    task->flags = 2; /*活动中*/
+    return;
+}
+
+void task_remove(struct TASK *task)//从struct TASKLEVEL中删除一个任务
+{
+    int i;
+    struct TASKLEVEL *tl = &taskctl->level[task->level];
+
+    /*寻找task所在的位置*/
+    for (i = 0; i < tl->running; i++) {
+        if (tl->tasks[i] == task) {
+            /*在这里  */
+            break;
+        }
+    }
+
+    tl->running--;
+    if (i < tl->now) {
+        tl->now--; /*需要移动成员，要相应地处理  */
+    }
+    if (tl->now >= tl->running) {
+        /*如果now的值出现异常，则进行修正*/
+        tl->now = 0;
+    }
+    task->flags = 1; /* 休眠中 */
+
+    /* 移动 */
+    for (; i < tl->running; i++) {
+        tl->tasks[i] = tl->tasks[i + 1];
+    }
+
+    return;
+}
+
+void task_switchsub(void)//在任务切换时决定接下来切换到哪个LEVEL
+{
+    int i;
+    /*寻找最上层的LEVEL */
+    for (i = 0; i < MAX_TASKLEVELS; i++) {//从最高层级开始找
+        if (taskctl->level[i].running > 0) {
+            break; /*找到了*/
+        }
+    }
+    taskctl->now_lv = i;
+    taskctl->lv_change = 0;//在下次任务切换时是否需要改变LEVEL
+    return;
+}
+
+void task_idle(void)//闲置的任务
+{
+    for (;;) {
+        io_hlt();
+    }
+}
+
 struct TASK *task_init(struct MEMMAN *memman)
 {
 	int i;
@@ -93,6 +160,23 @@ void task_run(struct TASK *task, int level, int priority)//准备运行，注意
 	return;
 }
 
+void task_sleep(struct TASK *task)
+{
+    struct TASK *now_task;
+    if (task->flags == 2) {
+        /*如果处于活动状态*/
+        now_task = task_now();
+        task_remove(task); /*执行此语句的话flags将变为1  */
+        if (task == now_task) {
+            /*如果是让自己休眠，则需要进行任务切换*/
+            task_switchsub();
+            now_task = task_now(); /*在设定后获取当前任务的值*/
+            farjmp(0, now_task->sel);
+        }
+    }
+    return;
+}
+
 void task_switch(void)
 {
 	struct TASKLEVEL *tl = &taskctl->level[taskctl->now_lv];
@@ -112,89 +196,3 @@ void task_switch(void)
     }
     return;
 }
-
-void task_sleep(struct TASK *task)
-{
-    struct TASK *now_task;
-    if (task->flags == 2) {
-        /*如果处于活动状态*/
-        now_task = task_now();
-        task_remove(task); /*执行此语句的话flags将变为1  */
-        if (task == now_task) {
-            /*如果是让自己休眠，则需要进行任务切换*/
-            task_switchsub();
-            now_task = task_now(); /*在设定后获取当前任务的值*/
-            farjmp(0, now_task->sel);
-        }
-    }
-    return;
-}
-
-struct TASK *task_now(void)//返回现在活动中的struct TASK的内存地址
-{
-    struct TASKLEVEL *tl = &taskctl->level[taskctl->now_lv];//先取得当前活动的层级
-    return tl->tasks[tl->now];
-}
-
-void task_add(struct TASK *task)//向struct TASKLEVEL中添加一个任务
-{
-    struct TASKLEVEL *tl = &taskctl->level[task->level];
-    tl->tasks[tl->running] = task;//添加到最后
-    tl->running++;
-    task->flags = 2; /*活动中*/
-    return;
-}
-
-void task_remove(struct TASK *task)//从struct TASKLEVEL中删除一个任务
-{
-    int i;
-    struct TASKLEVEL *tl = &taskctl->level[task->level];
-
-    /*寻找task所在的位置*/
-    for (i = 0; i < tl->running; i++) {
-        if (tl->tasks[i] == task) {
-            /*在这里  */
-            break;
-        }
-    }
-
-    tl->running--;
-    if (i < tl->now) {
-        tl->now--; /*需要移动成员，要相应地处理  */
-    }
-    if (tl->now >= tl->running) {
-        /*如果now的值出现异常，则进行修正*/
-        tl->now = 0;
-    }
-    task->flags = 1; /* 休眠中 */
-
-    /* 移动 */
-    for (; i < tl->running; i++) {
-        tl->tasks[i] = tl->tasks[i + 1];
-    }
-
-    return;
-}
-
-void task_switchsub(void)//在任务切换时决定接下来切换到哪个LEVEL
-{
-    int i;
-    /*寻找最上层的LEVEL */
-    for (i = 0; i < MAX_TASKLEVELS; i++) {//从最高层级开始找
-        if (taskctl->level[i].running > 0) {
-            break; /*找到了*/
-        }
-    }
-    taskctl->now_lv = i;
-    taskctl->lv_change = 0;//在下次任务切换时是否需要改变LEVEL
-    return;
-}
-
-void task_idle(void)//闲置的任务
-{
-    for (;;) {
-        io_hlt();
-    }
-}
-
-

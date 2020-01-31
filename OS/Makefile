@@ -106,9 +106,19 @@ clean :
 	-$(DEL) *.bin
 	-$(DEL) *.lst
 	-$(DEL) *.obj
+	-$(DEL) *.gas
 	-$(DEL) bootpack.map
 	-$(DEL) bootpack.gas
 	-$(DEL) bootpack.nas
+#	-$(DEL) dsctbl.nas
+#	-$(DEL) fifo.nas
+#	-$(DEL) graphic.nas
+#	-$(DEL) int.nas
+#	-$(DEL) keyboard.nas
+#	-$(DEL) memory.nas
+#	-$(DEL) mouse.nas
+#	-$(DEL) timer.nas
+#	-$(DEL) sheet.nas
 
 	-$(DEL) bootpack.bim
 	-$(DEL) bootpack.hrb

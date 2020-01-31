@@ -16,7 +16,8 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
 	cons.cur_x =  8;
 	cons.cur_y = 28;
 	cons.cur_c = -1;
-
+	*((int *) 0x0fec) = (int) &cons; 
+	
 	fifo32_init(&task->fifo, 128, fifobuf, task);
 	timer = timer_alloc();
 	timer_init(timer, &task->fifo, 1);
@@ -259,7 +260,7 @@ void cmd_hlt(struct CONSOLE *cons, int *fat)
 		p = (char *) memman_alloc_4k(memman, finfo->size);
 		file_loadfile(finfo->clustno, finfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));
 		set_segmdesc(gdt + 1003, finfo->size - 1, (int) p, AR_CODE32_ER);//将程序注册到GDT的1003号
-		farjmp(0, 1003 * 8);//跳转运行
+		farcall(0, 1003 * 8); //调用应用程序
 		memman_free_4k(memman, (int) p, finfo->size);
 	} else {
 		/* 没有找到文件的情况 */

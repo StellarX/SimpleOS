@@ -1,3 +1,15 @@
+20.2
+在hlt.nas应用程序中执行系统调用，调用操作系统的cons_putchar函数，显示一个字符。
+具体过程：
+1. （far）call API  ：_asm_cons_putchar。这个汇编函数将系统调用所需的参数push入栈，
+这样cons_putchar才能接收参数（far call 是因为应用程序和OS不在同一个段内）
+2. 准备好参数后，_asm_cons_putchar将会call cons_putchar
+3. 最后_asm_cons_putchar RETF，相当于far return，返回应用程序
+ _asm_cons_putchar也属于OS，它是OS对应用程序提供的接口程序
+
+实现应用程序的结束。只需在应用程序里加入RETF，_asm_cons_putchar 的RET改为RETF，
+操作系统里的hlt命令处理里面将farjump改为farcall
+
 20.1
 整理console.c、file.c文件
 

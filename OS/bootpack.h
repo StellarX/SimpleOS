@@ -220,6 +220,7 @@ struct TASKCTL {
 	struct TASK tasks0[MAX_TASKS];
 };
 extern struct TIMER *task_timer;
+struct TASK *task_now(void);//返回现在活动中的struct TASK的内存地址
 struct TASK *task_init(struct MEMMAN *memman);
 struct TASK *task_alloc(void);
 void task_run(struct TASK *task, int level, int priority);
@@ -230,7 +231,7 @@ void task_idle(void);//闲置的任务
 void task_switchsub(void);//在任务切换时决定接下来切换到哪个LEVEL
 void task_remove(struct TASK *task);//从struct TASKLEVEL中删除一个任务
 void task_add(struct TASK *task);//向struct TASKLEVEL中添加一个任务
-struct TASK *task_now(void);//返回现在活动中的struct TASK的内存地址
+
 
 /* window.c */
 void make_window8(unsigned char *buf, int xsize, int ysize, char *title, char act);

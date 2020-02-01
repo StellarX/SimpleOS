@@ -3,6 +3,7 @@
 		MOV		EDX,2	;显示字符串
 		MOV		EBX,msg
 		INT		0x40
-		RETF
+		MOV     EDX,4       ; 
+        INT     0x40        ;
 msg:
 		DB	"hello",0

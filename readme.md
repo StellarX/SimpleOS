@@ -34,9 +34,18 @@
 - window.c：窗口相关函数
 - file.c：FAT解压缩、搜索磁盘文件、将文件装载到内存等函数（后两个type命令中要用）
 
+##### 应用程序接口（API）
+- a_nask.nas
 ##### 应用程序
 - hello.nas
 - hello2.nas
+- a.c
+- hello3.c
+
+##### 异常测试程序
+- crack1.c
+- crack2.nas
+
 
 ##### 字体数据
 - hankaku.txt

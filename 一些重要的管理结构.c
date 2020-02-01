@@ -1,4 +1,3 @@
-
 È«¾Ö¶Î±í£º
 GDT£ºglobal £¨segment£©descriptor table
 TSS£ºtask status segment

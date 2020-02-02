@@ -349,7 +349,7 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
     } else if (edx == 7) {
         sht = (struct SHEET *) ebx;
         boxfill8(sht->buf, sht->bxsize, ebp, eax, ecx, esi, edi);
-        sheet_refresh(sht, eax, ecx, esi + 1, edi + 1);     
+        sheet_refresh(sht, eax, ecx, esi + 1, edi + 1); 
     }  else if (edx == 8) {
         memman_init((struct MEMMAN *) (ebx + ds_base));
         ecx &= 0xfffffff0;  /*以16字节为单位*/
@@ -360,6 +360,10 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
     } else if (edx == 10) {
         ecx = (ecx + 0x0f) & 0xfffffff0; /*以16字节为单位进位取整*/
         memman_free((struct MEMMAN *) (ebx + ds_base), eax, ecx);
+    } else if (edx == 11) {
+        sht = (struct SHEET *) ebx;
+        sht->buf[sht->bxsize * edi + esi] = eax;
+        sheet_refresh(sht, esi, edi, esi + 1, edi + 1);
     }
     return 0;
 }

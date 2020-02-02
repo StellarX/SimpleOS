@@ -4,6 +4,7 @@
 [FILE "a_nask.nas"]				; 源文件名信息
 
 		GLOBAL	_api_putchar, _api_putstr0, _api_openwin, _api_putstrwin, _api_boxfilwin
+		GLOBAL	_api_initmalloc, _api_malloc, _api_free
 		GLOBAL  _api_end 
 
 [SECTION .text]
@@ -75,6 +76,37 @@ _api_boxfilwin: ; void api_boxfilwin(int win, int x0, int y0, int x1, int y1, in
         POP     ESI
         POP     EDI
         RET
+
+_api_initmalloc:    ; void api_initmalloc(void);
+        PUSH    EBX
+        MOV     EDX,8
+        MOV     EBX,[CS:0x0020]     ; malloc内存空间的地址
+        MOV     EAX,EBX
+        ADD     EAX,32*1024         ; 加上32KB
+        MOV     ECX,[CS:0x0000]     ; 数据段的大小
+        SUB     ECX,EAX
+        INT     0x40
+        POP     EBX
+        RET
+
+_api_malloc:        ; char *api_malloc(int size);
+        PUSH    EBX
+        MOV     EDX,9
+        MOV     EBX,[CS:0x0020]
+        MOV     ECX,[ESP+8]         ; size
+        INT     0x40
+        POP     EBX
+        RET
+
+_api_free:          ; void api_free(char *addr, int size);
+        PUSH    EBX
+        MOV     EDX,10
+        MOV     EBX,[CS:0x0020]
+        MOV     EAX,[ESP+ 8]        ; addr
+        MOV     ECX,[ESP+12]        ; size
+        INT     0x40
+        POP     EBX
+        RET		
 		
 _api_end:   ; void api_end(void);  
         MOV     EDX,4

@@ -41,11 +41,9 @@
 - hello2.nas
 - a.c
 - hello3.c
-
-##### 异常测试程序
-- crack1.c
-- crack2.nas
-
+- hello4.c
+- winhelo.c
+- winhelo2.c
 
 ##### 字体数据
 - hankaku.txt

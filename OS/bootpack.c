@@ -41,6 +41,7 @@ void HariMain(void)
 	struct SHEET *sht_back, *sht_mouse, *sht_win, *sht_cons;
 	struct TASK *task_a, *task_cons;
 	struct TIMER *timer;//光标定时器
+	struct CONSOLE *cons;
 	
 	init_gdtidt();
 	init_pic();
@@ -63,6 +64,7 @@ void HariMain(void)
 	task_a = task_init(memman);
 	fifo.task = task_a;//这里将task_a作为有数据写入时需要唤醒的任务
 	task_run(task_a, 1, 0);//1：层级  0：不改变优先级
+	*((int *) 0x0fe4) = (int) shtctl;
 	
 	/* sht_back */
 	sht_back  = sheet_alloc(shtctl);
@@ -136,6 +138,14 @@ void HariMain(void)
 			i = fifo32_get(&fifo);
 			io_sti();//允许中断
 			if (256 <= i && i <= 511) { /* 键盘数据*/
+				if (i == 256 + 0x3b && key_shift != 0 && task_cons->tss.ss0 != 0) { /* Shift+F1  当按下强制结束键时，改写命令行窗口任务的的寄存器值，并goto到asm_end_app*/
+                    cons = (struct CONSOLE *) *((int *) 0x0fec);
+                    cons_putstr0(cons, "\nBreak(key):\n");
+                    io_cli();   /*不能在改变寄存器值时切换到其他任务*/
+                    task_cons->tss.eax = (int) &(task_cons->tss.esp0);
+                    task_cons->tss.eip = (int) asm_end_app;
+                    io_sti();
+                }
 				if (i < 0x80 + 256) { /*将按键编码转换为字符编码*/
                     if (key_shift == 0) {
                         s[0] = keytable0[i - 256];

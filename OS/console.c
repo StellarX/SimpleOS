@@ -312,7 +312,8 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
                     /*找到被应用程序遗留的窗口*/
                     sheet_free(sht);    /*关闭*/
                 }
-            }                       
+            }            
+            timer_cancelall(&task->fifo);           
 			memman_free_4k(memman, (int) q, segsiz);
         } else {
             cons_putstr0(cons, ".hrb file format error.\n");
@@ -420,11 +421,20 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
             if (i == 3) {   /*光标OFF */
                 cons->cur_c = -1;
             }
-            if (256 <= i && i <= 511) { /*键盘数据（通过任务A）*/
+            if (i >= 256) { /*键盘数据（通过任务A）*/
                 reg[7] = i - 256;
                 return 0;
             }
         }
+    } else if (edx == 16) {                                             /*从此开始*/
+        reg[7] = (int) timer_alloc();
+        ((struct TIMER *) reg[7])->flags2 = 1;  /*允许自动取消*/
+    } else if (edx == 17) {
+        timer_init((struct TIMER *) ebx, &task->fifo, eax + 256);
+    } else if (edx == 18) {
+        timer_settime((struct TIMER *) ebx, eax);
+    } else if (edx == 19) {
+        timer_free((struct TIMER *) ebx);                               /*到此结束*/
     }
     return 0;
 }

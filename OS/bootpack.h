@@ -161,6 +161,7 @@ struct SHEET {
 	unsigned char *buf;//图层首地址
 	int bxsize, bysize, vx0, vy0, col_inv, height, flags;//bxsize，bysize：整体大小
 	struct SHTCTL *ctl;
+	struct TASK *task;
 };                      //vx，vy：在画面上的坐标   col_inv 透明色色号    
 struct SHTCTL {
 	unsigned char *vram, *map;//VRAM的地址
@@ -265,6 +266,7 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline);
 int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
 int *inthandler0d(int *esp);//一般性保护异常中断处理
 int *inthandler0c(int *esp);//栈异常
+void hrb_api_linewin(struct SHEET *sht, int x0, int y0, int x1, int y1, int col);
 
 /* file.c */
 struct FILEINFO {

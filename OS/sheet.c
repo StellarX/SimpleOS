@@ -38,6 +38,7 @@ struct SHEET *sheet_alloc(struct SHTCTL *ctl)
 			sht = &ctl->sheets0[i];
 			sht->flags = SHEET_USE; /* 标记为正在使用 */
 			sht->height = -1; /* 表示图层的高度还没有设置，因而不是显示对象*/
+			sht->task = 0; 
 			return sht;
 		}
 	}

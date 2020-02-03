@@ -42,6 +42,8 @@ void HariMain(void)
 	struct TASK *task_a, *task_cons;
 	struct TIMER *timer;//光标定时器
 	struct CONSOLE *cons;
+	int j, x, y, mmx = -1, mmy = -1;//mm是“move mode”的缩写，这两个变量所记录的是移动之前的坐标,规定当mmx为负数时代表当前不处于窗口移动模式
+    struct SHEET *sht = 0;
 	
 	init_gdtidt();
 	init_pic();
@@ -138,6 +140,9 @@ void HariMain(void)
 			i = fifo32_get(&fifo);
 			io_sti();//允许中断
 			if (256 <= i && i <= 511) { /* 键盘数据*/
+				if (i == 256 + 0x57 && shtctl->top > 2) {    /* F11 */
+                    sheet_updown(shtctl->sheets[1], shtctl->top - 1);
+				}
 				if (i == 256 + 0x3b && key_shift != 0 && task_cons->tss.ss0 != 0) { /* Shift+F1  当按下强制结束键时，改写命令行窗口任务的的寄存器值，并goto到asm_end_app*/
                     cons = (struct CONSOLE *) *((int *) 0x0fec);
                     cons_putstr0(cons, "\nBreak(key):\n");
@@ -266,10 +271,52 @@ void HariMain(void)
 						my = binfo->scrny - 1;
 					}
 					sheet_slide(sht_mouse, mx, my);
-					if ((mdec.btn & 0x01) != 0) {
-                        /* 按下左键、移动sht_win  */
-                        sheet_slide(sht_win, mx - 80, my - 8);
-					}
+					if ((mdec.btn & 0x01) != 0) 
+					{ /*按下左键*/
+                        /*按照从上到下的顺序寻找鼠标所指向的图层*/
+                        if (mmx < 0) {
+                            /*如果处于通常模式*/
+                            /*按照从上到下的顺序寻找鼠标所指向的图层*/
+                            for (j = shtctl->top - 1; j > 0; j--) {
+                                sht = shtctl->sheets[j];
+                                x = mx - sht->vx0;
+                                y = my - sht->vy0;
+                                if (0 <= x && x < sht->bxsize && 0 <= y && y < sht->bysize) {
+                                    if (sht->buf[y * sht->bxsize + x] != sht->col_inv) {
+                                        sheet_updown(sht, shtctl->top - 1);
+                                        if (3 <= x && x < sht->bxsize - 3 && 3 <= y && y < 21) {
+                                            mmx = mx;   /*进入窗口移动模式*/
+                                            mmy = my;
+                                        }
+										if (sht->bxsize - 21 <= x && x < sht->bxsize - 5 && 5 <= y && y < 19) {
+											/*点击“×”按钮*/
+											if (sht->task != 0) {   /*该窗口是否为应用程序窗口？*/
+												cons = (struct CONSOLE *) *((int *) 0x0fec);
+												cons_putstr0(cons, "\nBreak(mouse) :\n");
+												io_cli();   /*强制结束处理中禁止切换任务*/
+												task_cons->tss.eax = (int)
+												   &(task_cons->tss.esp0);
+												task_cons->tss.eip = (int) asm_end_app;
+												io_sti();
+											}
+										}
+                                        break;
+                                    }
+                                }
+                            }
+                        } else {
+                            /*如果处于窗口移动模式*/
+                            x = mx - mmx;   /*计算鼠标的移动距离*/
+                            y = my - mmy;
+                            sheet_slide(sht, sht->vx0 + x, sht->vy0 + y);
+                            mmx = mx;   /*更新为移动后的坐标*/
+                            mmy = my;
+                        }
+                    } 
+					else {
+                        /*没有按下左键*/
+						mmx = -1;   /*返回通常模式*/
+                    }
 				}
 			} 
 			else if (i <= 1) 

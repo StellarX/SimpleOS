@@ -323,6 +323,7 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
     struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0x0fec);
 	struct SHTCTL *shtctl = (struct SHTCTL *) *((int *) 0x0fe4); 
 	struct SHEET *sht;
+	int i;
     int *reg = &eax + 1;    /* eax后面的地址*/
         /*强行改写通过PUSHAD保存的值*/
         /* reg[0] : EDI,   reg[1] : ESI,   reg[2] : EBP,   reg[3] : ESP */
@@ -343,13 +344,17 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
         sheet_updown(sht, 3);   /*背景层高度3位于task_a之上*/
         reg[7] = (int) sht;          
     } else if (edx == 6) {                                  
-        sht = (struct SHEET *) ebx;
+        sht = (struct SHEET *) (ebx & 0xfffffffe);
         putfonts8_asc(sht->buf, sht->bxsize, esi, edi, eax, (char *) ebp + ds_base);
-        sheet_refresh(sht, esi, edi, esi + ecx * 8, edi + 16);
+        if ((ebx & 1) == 0) {//说明是偶数
+            sheet_refresh(sht, esi, edi, esi + ecx * 8, edi + 16);
+        }
     } else if (edx == 7) {
-        sht = (struct SHEET *) ebx;
+        sht = (struct SHEET *) (ebx & 0xfffffffe);
         boxfill8(sht->buf, sht->bxsize, ebp, eax, ecx, esi, edi);
-        sheet_refresh(sht, eax, ecx, esi + 1, edi + 1); 
+        if ((ebx & 1) == 0) {
+            sheet_refresh(sht, eax, ecx, esi + 1, edi + 1);
+        }
     }  else if (edx == 8) {
         memman_init((struct MEMMAN *) (ebx + ds_base));
         ecx &= 0xfffffff0;  /*以16字节为单位*/
@@ -361,9 +366,53 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
         ecx = (ecx + 0x0f) & 0xfffffff0; /*以16字节为单位进位取整*/
         memman_free((struct MEMMAN *) (ebx + ds_base), eax, ecx);
     } else if (edx == 11) {
-        sht = (struct SHEET *) ebx;
+        sht = (struct SHEET *) (ebx & 0xfffffffe);
         sht->buf[sht->bxsize * edi + esi] = eax;
-        sheet_refresh(sht, esi, edi, esi + 1, edi + 1);
+        if ((ebx & 1) == 0) {
+            sheet_refresh(sht, esi, edi, esi + 1, edi + 1);
+        } 
+    } else if (edx == 12) {
+        sht = (struct SHEET *) ebx;
+        sheet_refresh(sht, eax, ecx, esi, edi);
+    } else if (edx == 13) {
+        sht = (struct SHEET *) (ebx & 0xfffffffe);
+        hrb_api_linewin(sht, eax, ecx, esi, edi, ebp);
+        if ((ebx & 1) == 0) {
+            sheet_refresh(sht, eax, ecx, esi + 1, edi + 1);
+        }
+    } else if (edx == 14) {
+        sheet_free((struct SHEET *) ebx);//close window
+    } else if (edx == 15) {
+        for (;;) {
+
+            io_cli();
+            if (fifo32_status(&task->fifo) == 0) {
+                if (eax != 0) {
+                    task_sleep(task);   /* FIFO为空，休眠并等待*/
+                } else {
+                    io_sti();
+                    reg[7] = -1;
+                    return 0;
+                }
+            }
+            i = fifo32_get(&task->fifo);
+            io_sti();
+            if (i <= 1) { /*光标用定时器*/
+                /*应用程序运行时不需要显示光标，因此总是将下次显示用的值置为1*/
+                timer_init(cons->timer, &task->fifo, 1); /*下次置为1*/
+                timer_settime(cons->timer, 50);
+            }
+            if (i == 2) {   /*光标ON */
+                cons->cur_c = COL8_FFFFFF;
+            }
+            if (i == 3) {   /*光标OFF */
+                cons->cur_c = -1;
+            }
+            if (256 <= i && i <= 511) { /*键盘数据（通过任务A）*/
+                reg[7] = i - 256;
+                return 0;
+            }
+        }
     }
     return 0;
 }
@@ -389,5 +438,55 @@ int *inthandler0c(int *esp)
 	sprintf(s, "EIP = %08X\n", esp[11]); 
 	cons_putstr0(cons, s); //将esp（即栈）的11号元素（即EIP）显示出来
     return &(task->tss.esp0);   /*强制结束程序*/
+}
+
+void hrb_api_linewin(struct SHEET *sht, int x0, int y0, int x1, int y1, int col)
+{
+    int i, x, y, len, dx, dy;
+
+    dx = x1 - x0;
+    dy = y1 - y0;
+    x = x0 << 10;
+    y = y0 << 10;
+    if (dx < 0) {
+        dx = - dx;
+    }
+    if (dy < 0) {
+        dy = - dy;
+    }
+    if (dx >= dy) {
+        len = dx + 1;
+        if (x0 > x1) {
+            dx = -1024;
+        } else {
+            dx =  1024;
+        }
+
+        if (y0 <= y1) {
+            dy = ((y1 - y0 + 1) << 10) / len;
+        } else {
+            dy = ((y1 - y0 - 1) << 10) / len;
+        }
+    } else {
+        len = dy + 1;
+        if (y0 > y1) {
+            dy = -1024;
+        } else {
+            dy =  1024;
+        }
+        if (x0 <= x1) {
+            dx = ((x1 - x0 + 1) << 10) / len;
+        } else {
+            dx = ((x1 - x0 - 1) << 10) / len;
+        }
+    }
+
+    for (i = 0; i < len; i++) {
+        sht->buf[(y >> 10) * sht->bxsize + (x >> 10)] = col;
+        x += dx;
+        y += dy;
+    }
+
+    return;
 }
 

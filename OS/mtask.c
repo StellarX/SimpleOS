@@ -81,7 +81,7 @@ struct TASK *task_init(struct MEMMAN *memman)
 	taskctl = (struct TASKCTL *) memman_alloc_4k(memman, sizeof (struct TASKCTL));
 	for (i = 0; i < MAX_TASKS; i++) {
 		taskctl->tasks0[i].flags = 0;
-		taskctl->tasks0[i].sel = (TASK_GDT0 + i) * 8;//从gdt里选择哪个编号的段
+		taskctl->tasks0[i].sel = (TASK_GDT0 + i) * 8;//从gdt里选择哪个编号的段//这里为什么要乘以8???
 		set_segmdesc(gdt + TASK_GDT0 + i, 103, (int) &taskctl->tasks0[i].tss, AR_TSS32);//段长限制为103字节
 	}
 	for (i = 0; i < MAX_TASKLEVELS; i++) {

@@ -217,6 +217,8 @@ struct TASK {
 	int priority, level;
 	struct FIFO32 fifo;
 	struct TSS32 tss;
+	struct CONSOLE *cons; 
+    int ds_base;
 };
 struct TASKLEVEL {
     int running; /*正在运行的任务数量*/
@@ -256,13 +258,13 @@ struct CONSOLE {
 	int cur_x, cur_y, cur_c;
 	struct TIMER *timer;
 };
-void console_task(struct SHEET *sheet, unsigned int memtotal);
+void console_task(struct SHEET *sheet, int memtotal);
 void cons_putchar(struct CONSOLE *cons, int chr, char move);
 void cons_putstr0(struct CONSOLE *cons, char *s);
 void cons_putstr1(struct CONSOLE *cons, char *s, int l);
 void cons_newline(struct CONSOLE *cons);
-void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, unsigned int memtotal);
-void cmd_mem(struct CONSOLE *cons, unsigned int memtotal);
+void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, int memtotal);
+void cmd_mem(struct CONSOLE *cons, int memtotal);
 void cmd_cls(struct CONSOLE *cons);
 void cmd_dir(struct CONSOLE *cons);
 void cmd_type(struct CONSOLE *cons, int *fat, char *cmdline);

@@ -4,9 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
-void console_task(struct SHEET *sheet, unsigned int memtotal)
+void console_task(struct SHEET *sheet, int memtotal)
 {
-	struct TIMER *timer;
 	struct TASK *task = task_now();
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 	int i, fifobuf[128], *fat = (int *) memman_alloc_4k(memman, 4 * 2880);
@@ -16,12 +15,12 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
 	cons.cur_x =  8;
 	cons.cur_y = 28;
 	cons.cur_c = -1;
-	*((int *) 0x0fec) = (int) &cons; 
+	task->cons = &cons;     /*修改前：*((int *) 0x0fec) = (int) &cons;*/
 	
 	fifo32_init(&task->fifo, 128, fifobuf, task);
-	timer = timer_alloc();
-	timer_init(timer, &task->fifo, 1);
-	timer_settime(timer, 50);
+	cons.timer = timer_alloc();
+	timer_init(cons.timer, &task->fifo, 1);
+	timer_settime(cons.timer, 50);
 	file_readfat(fat, (unsigned char *) (ADR_DISKIMG + 0x000200));//压缩状态的FAT很难使用，因此我们先用file_readfat将其展开到fat[]。
     
 	/*显示提示符*/
@@ -37,17 +36,17 @@ void console_task(struct SHEET *sheet, unsigned int memtotal)
 			io_sti();
 			if (i <= 1) { /* 光标用定时器 */
 				if (i != 0) {
-					timer_init(timer, &task->fifo, 0); /* 下次置0  */
+					timer_init(cons.timer, &task->fifo, 0); /* 下次置0  */
 					if (cons.cur_c >= 0) {
                         cons.cur_c = COL8_FFFFFF;
                     }
 				} else {
-					timer_init(timer, &task->fifo, 1); /* 下次置1 */
+					timer_init(cons.timer, &task->fifo, 1); /* 下次置1 */
 					if (cons.cur_c >= 0) {
                         cons.cur_c = COL8_000000;
                     }
 				}
-				timer_settime(timer, 50);
+				timer_settime(cons.timer, 50);
 			}
 			if (i == 2) {   /*光标ON */    /*从此开始*/
                 cons.cur_c = COL8_FFFFFF;
@@ -167,7 +166,7 @@ void cons_newline(struct CONSOLE *cons)
     return;
 }
 
-void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, unsigned int memtotal)
+void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, int memtotal)
 {
 	if (strcmp(cmdline, "mem") == 0) {
 		cmd_mem(cons, memtotal);
@@ -186,7 +185,7 @@ void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, unsigned int mem
 	return;
 }
 
-void cmd_mem(struct CONSOLE *cons, unsigned int memtotal)
+void cmd_mem(struct CONSOLE *cons, int memtotal)
 {
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 	char s[60];
@@ -298,13 +297,13 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
             datsiz = *((int *) (p + 0x0010));
             dathrb = *((int *) (p + 0x0014));
             q = (char *) memman_alloc_4k(memman, segsiz);
-            *((int *) 0xfe8) = (int) q;//把CS段的基址存入这个地址
-            set_segmdesc(gdt + 1003, finfo->size - 1, (int) p, AR_CODE32_ER + 0x60);//将程序文件所在的段注册到GDT的1003号
-            set_segmdesc(gdt + 1004, segsiz - 1,      (int) q, AR_DATA32_RW + 0x60);//注册应用程序专用的内存空间
+            task->ds_base = (int) q;    /*修改前：*((int *) 0x0fe8) = (int) &q;*///把CS段的基址存入这个地址
+            set_segmdesc(gdt + task->sel / 8 + 1000, finfo->size - 1, (int) p, AR_CODE32_ER + 0x60);//将程序文件所在的段注册到GDT的1003号
+            set_segmdesc(gdt + task->sel / 8 + 2000, segsiz - 1,      (int) q, AR_DATA32_RW + 0x60);//注册应用程序专用的内存空间
             for (i = 0; i < datsiz; i++) {
                 q[esp + i] = p[dathrb + i];//将.hrb文件中的数据部分先复制到数据段后再启动程序。
             }
-            start_app(0x1b, 1003 * 8, esp, 1004 * 8, &(task->tss.esp0));//准备启动应用程序
+            start_app(0x1b, task->sel + 1000 * 8, esp, task->sel + 2000 * 8, &(task->tss.esp0));//准备启动应用程序
             shtctl = (struct SHTCTL *) *((int *) 0x0fe4);
             for (i = 0; i < MAX_SHEETS; i++) {
                 sht = &(shtctl->sheets0[i]);
@@ -329,9 +328,9 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
 
 int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax)
 {
-	int ds_base = *((int *) 0xfe8);
 	struct TASK *task = task_now();
-    struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0x0fec);
+    int ds_base = task->ds_base; //int ds_base = *((int *) 0xfe8);
+    struct CONSOLE *cons = task->cons;//struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0x0fec);
 	struct SHTCTL *shtctl = (struct SHTCTL *) *((int *) 0x0fe4); 
 	struct SHEET *sht;
 	int i;
@@ -454,9 +453,9 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 
 int *inthandler0d(int *esp)
 {
-    struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0x0fec);
 	struct TASK *task = task_now(); 
-	char s[30];
+	struct CONSOLE *cons = task->cons;//struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0x0fec);
+    char s[30];
     cons_putstr0(cons, "\nINT 0D :\n General Protected Exception.\n");
 	sprintf(s, "EIP = %08X\n", esp[11]);
 	cons_putstr0(cons, s);
@@ -466,8 +465,8 @@ int *inthandler0d(int *esp)
 
 int *inthandler0c(int *esp)
 {
-    struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0x0fec);
     struct TASK *task = task_now();
+    struct CONSOLE *cons = task->cons;//struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0x0fec);
 	char s[30];
     cons_putstr0(cons, "\nINT 0C :\n Stack Exception.\n");
 	sprintf(s, "EIP = %08X\n", esp[11]); 

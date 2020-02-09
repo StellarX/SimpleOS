@@ -10,7 +10,7 @@ void HariMain(void)
 {
 	struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
 	struct FIFO32 fifo, keycmd;
-    int fifobuf[128], keycmd_buf[32];
+    int fifobuf[128], keycmd_buf[32], *cons_fifo[2];
 	char s[40];
 	int mx, my, i;
 	unsigned int memtotal;
@@ -43,7 +43,7 @@ void HariMain(void)
 	unsigned char *buf_back, buf_mouse[256], *buf_cons[2];   
     struct SHEET *sht_back, *sht_mouse, *sht_cons[2];
     struct TASK *task_a, *task_cons[2], *task; 
-	int j, x, y, mmx = -1, mmy = -1;//mm是“move mode”的缩写，这两个变量所记录的是移动之前的坐标,规定当mmx为负数时代表当前不处于窗口移动模式
+	int j, x, y, mmx = -1, mmy = -1, mmx2 = 0;//mm是“move mode”的缩写，这两个变量所记录的是移动之前的坐标,规定当mmx为负数时代表当前不处于窗口移动模式
     struct SHEET *sht = 0, *key_win;//key_win这个变量存放当前处于输入模式的窗口地址
 	
 	init_gdtidt();
@@ -96,6 +96,8 @@ void HariMain(void)
         task_run(task_cons[i], 2, 2); /* level=2, priority=2 */
         sht_cons[i]->task = task_cons[i];
         sht_cons[i]->flags |= 0x20; /*有光标*/
+        cons_fifo[i] = (int *) memman_alloc_4k(memman, 128 * 4);   
+        fifo32_init(&task_cons[i]->fifo, 128, cons_fifo[i], task_cons[i]);
     }  
 	
 	/* sht_mouse */
@@ -115,7 +117,7 @@ void HariMain(void)
     sheet_updown(sht_mouse,    3);
 	key_win = sht_cons[0];
 	keywin_on(key_win);
-		
+
 	/*为了避免和键盘当前状态冲突，在一开始先进行设置*/
     fifo32_put(&keycmd, KEYCMD_LED);
     fifo32_put(&keycmd, key_leds);
@@ -254,6 +256,7 @@ void HariMain(void)
                                         if (3 <= x && x < sht->bxsize - 3 && 3 <= y && y < 21) {
                                             mmx = mx;   /*进入窗口移动模式*/
                                             mmy = my;
+                                            mmx2 = sht->vx0;
                                         }
 										if (sht->bxsize - 21 <= x && x < sht->bxsize - 5 && 5 <= y && y < 19) {
 											/*点击“×”按钮*/
@@ -274,9 +277,8 @@ void HariMain(void)
                             /*如果处于窗口移动模式*/
                             x = mx - mmx;   /*计算鼠标的移动距离*/
                             y = my - mmy;
-                            sheet_slide(sht, sht->vx0 + x, sht->vy0 + y);
-                            mmx = mx;   /*更新为移动后的坐标*/
-                            mmy = my;
+                            sheet_slide(sht,  (mmx2 + x + 2) & ~3, sht->vy0 + y);
+                            mmy = my;/*更新为移动后的坐标*/
                         }
                     } 
 					else {
@@ -300,7 +302,7 @@ void keywin_off(struct SHEET *key_win)
 void keywin_on(struct SHEET *key_win)                                         
 {
     change_wtitle8(key_win, 1);
-    if ((key_win->flags & 0x20) != 0) {                                     
+    if ((key_win->flags & 0x20) != 0) {                                
         fifo32_put(&key_win->task->fifo, 2); /*命令行窗口光标ON */
     }
     return;                                                                 

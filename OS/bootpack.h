@@ -218,7 +218,7 @@ struct TASK {
 	struct FIFO32 fifo;
 	struct TSS32 tss;
 	struct CONSOLE *cons; 
-    int ds_base;
+    int ds_base, cons_stack;
 };
 struct TASKLEVEL {
     int running; /*正在运行的任务数量*/
@@ -273,6 +273,7 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 int *inthandler0d(int *esp);//一般性保护异常中断处理
 int *inthandler0c(int *esp);//栈异常
 void hrb_api_linewin(struct SHEET *sht, int x0, int y0, int x1, int y1, int col);
+void cmd_exit(struct CONSOLE *cons, int *fat);
 
 /* file.c */
 struct FILEINFO {

@@ -5,6 +5,9 @@
 void keywin_on(struct SHEET *key_win);
 void keywin_off(struct SHEET *key_win);//控制窗口标题栏的颜色和task_a窗口的光标
 struct SHEET *open_console(struct SHTCTL *shtctl, unsigned int memtotal);
+void close_constask(struct TASK *task);
+void close_console(struct SHEET *sht);
+
 
 void HariMain(void)
 {
@@ -41,7 +44,7 @@ void HariMain(void)
 	//左Shift按下时置为1，右Shift按下时置为2，两个都不按时置为0，两个都按下置为3
 	//int key_to = 0;//用于记录键盘输入（key）应该发送到（to）哪里
 	unsigned char *buf_back, buf_mouse[256];   
-    struct SHEET *sht_back, *sht_mouse, *sht_cons[2];
+    struct SHEET *sht_back, *sht_mouse;
     struct TASK *task_a, *task; 
 	int j, x, y, mmx = -1, mmy = -1, mmx2 = 0;//mm是“move mode”的缩写，这两个变量所记录的是移动之前的坐标,规定当mmx为负数时代表当前不处于窗口移动模式
     struct SHEET *sht = 0, *key_win;//key_win这个变量存放当前处于输入模式的窗口地址
@@ -76,8 +79,7 @@ void HariMain(void)
 	init_screen8(buf_back, binfo->scrnx, binfo->scrny);
 
 	/* sht_cons */
-	sht_cons[0] = open_console(shtctl, memtotal);
-    sht_cons[1] = 0; /*未打开状态*/ 
+	key_win = open_console(shtctl, memtotal);
 	
 	/* sht_mouse */
 	sht_mouse = sheet_alloc(shtctl);
@@ -87,18 +89,18 @@ void HariMain(void)
 	my = (binfo->scrny - 28 - 16) / 2;
 
 	sheet_slide(sht_back, 0, 0);//虽然还未显示，但把它移到该位置，准备显示  
-    sheet_slide(sht_cons[0],  32,  4);
+    sheet_slide(key_win,  32,  4);
 	sheet_slide(sht_mouse, mx, my);
 	sheet_updown(sht_back,  0);        
-    sheet_updown(sht_cons[0],  1);
+    sheet_updown(key_win,  1);
     sheet_updown(sht_mouse,    2);
-	key_win = sht_cons[0];
 	keywin_on(key_win);
 
 	/*为了避免和键盘当前状态冲突，在一开始先进行设置*/
     fifo32_put(&keycmd, KEYCMD_LED);
     fifo32_put(&keycmd, key_leds);
-	
+	*((int *) 0x0fec) = (int) &fifo;
+
 	for (;;) {
 		if (fifo32_status(&keycmd) > 0 && keycmd_wait < 0) { 
             /*如果存在向键盘控制器发送的数据，则发送它  */
@@ -124,15 +126,19 @@ void HariMain(void)
 		} else {
 			i = fifo32_get(&fifo);
 			io_sti();//允许中断
-			if (key_win->flags == 0) {  /*输入窗口被关闭*/      
-                key_win = shtctl->sheets[shtctl->top - 1];
-                keywin_on(key_win);
-            }   
+			if (key_win != 0 && key_win->flags == 0) {  /*窗口被关闭*/  
+                if (shtctl->top == 1) { /*当画面上只剩鼠标和背景时*/
+                    key_win = 0;
+                } else {
+                    key_win = shtctl->sheets[shtctl->top - 1];
+                    keywin_on(key_win);
+                }                                                
+            } 
 			if (256 <= i && i <= 511) { /* 键盘数据*/
 				if (i == 256 + 0x57 && shtctl->top > 2) {    /* F11 */
                     sheet_updown(shtctl->sheets[1], shtctl->top - 1);
 				}
-				if (i == 256 + 0x3b && key_shift != 0) { /* Shift+F1 */
+				if (i == 256 + 0x3b && key_shift != 0 && key_win != 0) { /* Shift+F1 */
                     task = key_win->task;
                     if (task != 0 && task->tss.ss0 != 0) { 
                         cons_putstr0(task->cons, "\nBreak(key) :\n");
@@ -142,13 +148,14 @@ void HariMain(void)
                         io_sti();
 			       }
                 }
-                if (i == 256 + 0x3c && key_shift != 0 && sht_cons[1] == 0) {    /* Shift+F2 */
-                    sht_cons[1] = open_console(shtctl, memtotal);
-                    sheet_slide(sht_cons[1], 32, 4);
-                    sheet_updown(sht_cons[1], shtctl->top);
+                if (i == 256 + 0x3c && key_shift != 0) {    /* Shift+F2 */
                     /*自动将输入焦点切换到新打开的命令行窗口（这样比较方便吧？） */
-                    keywin_off(key_win);
-                    key_win = sht_cons[1];
+                    if (key_win != 0) {                               
+                        keywin_off(key_win);
+                    }  
+                    key_win = open_console(shtctl, memtotal);
+                    sheet_slide(key_win, 32, 4);
+                    sheet_updown(key_win, shtctl->top);
                     keywin_on(key_win);
                 }
 				if (i < 0x80 + 256) { /*将按键编码转换为字符编码*/
@@ -166,11 +173,11 @@ void HariMain(void)
                         s[0] += 0x20;   /*将大写字母转换为小写字母*/
                     }
 				}
-				if (s[0] != 0) { /*一般字符、退格键、回车键*/
+				if (s[0] != 0 && key_win != 0) { /*一般字符、退格键、回车键*/
  					/*发送至命令行窗口*/
                     fifo32_put(&key_win->task->fifo, s[0] + 256);
                 }
-                if (i == 256 + 0x0f) {  /* Tab键*/
+                if (i == 256 + 0x0f && key_win != 0) {  /* Tab键*/
                 	keywin_off(key_win);
                     j = key_win->height - 1;
                     if (j == 0) {
@@ -267,6 +274,11 @@ void HariMain(void)
                                                 task->tss.eax = (int) &(task->tss.esp0);
                         			            task->tss.eip = (int) asm_end_app;
                                                 io_sti();
+                                            }  else {    /*命令行窗口*/
+                                                task = sht->task;
+                                                io_cli();
+                                                fifo32_put(&task->fifo, 4);
+               				                    io_sti();
                                             }
 										}
                                         break;
@@ -292,6 +304,9 @@ void HariMain(void)
                     }
 				}
 			} 
+			else if (768 <= i && i <= 1023) { /*命令行窗口关闭处理*/        
+                close_console(shtctl->sheets0 + (i - 768));                    
+            }
 		}
 	}
 }
@@ -323,7 +338,8 @@ struct SHEET *open_console(struct SHTCTL *shtctl, unsigned int memtotal)
     sheet_setbuf(sht, buf, 256, 165, -1); /*无透明色*/
     make_window8(buf, 256, 165, "console", 0);
     make_textbox8(sht, 8, 28, 240, 128, COL8_000000);
-    task->tss.esp = memman_alloc_4k(memman, 64 * 1024) + 64 * 1024 - 12;
+    task->cons_stack = memman_alloc_4k(memman, 64 * 1024);
+    task->tss.esp = task->cons_stack + 64 * 1024 - 12;
     task->tss.eip = (int) &console_task;
     task->tss.es = 1 * 8;
     task->tss.cs = 2 * 8;
@@ -340,3 +356,22 @@ struct SHEET *open_console(struct SHTCTL *shtctl, unsigned int memtotal)
     return sht;
 }
 
+void close_constask(struct TASK *task)
+{
+    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
+    task_sleep(task);
+    memman_free_4k(memman, task->cons_stack, 64 * 1024);
+    memman_free_4k(memman, (int) task->fifo.buf, 128 * 4);
+    task->flags = 0; /*用来替代task_free(task); */
+    return;
+}
+
+void close_console(struct SHEET *sht)
+{
+    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
+    struct TASK *task = sht->task;
+    memman_free_4k(memman, (int) sht->buf, 256 * 165);
+    sheet_free(sht);
+    close_constask(task);
+    return;
+}

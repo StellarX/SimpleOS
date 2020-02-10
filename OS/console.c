@@ -110,7 +110,7 @@ void cons_putchar(struct CONSOLE *cons, int chr, char move)
 	if (s[0] == 0x09) {	/* 制表符 */
 		for (;;) {
 			if (cons->sht != 0) {               /*从此开始*/
-                putfouts8_asc_sht(cons->sht, cons->cur_x, cons->cur_y, COL8_FFFFFF, COL8_000000,  " ", 1);
+                putfonts8_asc_sht(cons->sht, cons->cur_x, cons->cur_y, COL8_FFFFFF, COL8_000000,  " ", 1);
             } 
 			cons->cur_x += 8;
 			if (cons->cur_x == 8 + 240) {
@@ -126,7 +126,7 @@ void cons_putchar(struct CONSOLE *cons, int chr, char move)
 		/* 这里暂且不进行任何操作 */
 	} else {	/* 一般字符 */
 		if (cons->sht != 0) {                   /*从此开始*/
-            putfouts8_asc_sht(cons->sht, cons->cur_x, cons->cur_y, COL8_FFFFFF, COL8_000000, s,   1);
+            putfonts8_asc_sht(cons->sht, cons->cur_x, cons->cur_y, COL8_FFFFFF, COL8_000000, s,   1);
         }    
 		if (move != 0) {
 			/* 当move为0时，不使光标前进 */

@@ -4,7 +4,6 @@
 #define KEYCMD_LED		0xed
 void keywin_on(struct SHEET *key_win);
 void keywin_off(struct SHEET *key_win);//控制窗口标题栏的颜色和task_a窗口的光标
-struct SHEET *open_console(struct SHTCTL *shtctl, unsigned int memtotal);
 void close_constask(struct TASK *task);
 void close_console(struct SHEET *sht);
 

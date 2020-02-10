@@ -195,7 +195,7 @@ haribote.img : ipl10.bin haribote.sys Makefile \
 		
 # 一般規則
 
-%.gas : %.c Makefile
+%.gas : %.c bootpack.h Makefile
 	$(CC1) -o $*.gas $*.c
 
 %.nas : %.gas Makefile
@@ -207,8 +207,6 @@ haribote.img : ipl10.bin haribote.sys Makefile \
 #命令 在cmd窗口输入，就会执行对应的命令
 img:
 	$(MAKE) haribote.img
-asm:
-	$(MAKE) ipl10.bin
 	
 run :
 	$(MAKE) img
@@ -226,17 +224,6 @@ clean :
 	-$(DEL) *.map
 	-$(DEL) *.bim
 	-$(DEL) *.hrb
-	-$(DEL) *.gas
-	-$(DEL) bootpack.nas
-#	-$(DEL) dsctbl.nas
-#	-$(DEL) fifo.nas
-#	-$(DEL) graphic.nas
-#	-$(DEL) int.nas
-#	-$(DEL) keyboard.nas
-#	-$(DEL) memory.nas
-#	-$(DEL) mouse.nas
-#	-$(DEL) timer.nas
-#	-$(DEL) sheet.nas
 	-$(DEL) haribote.sys
 	
 #从下面可以看出，make.exe的作用是进入makefile文件，然后执行里面的命令

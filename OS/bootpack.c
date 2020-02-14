@@ -46,7 +46,7 @@ void HariMain(void)
     struct SHEET *sht_back, *sht_mouse;
     struct TASK *task_a, *task; 
 	int j, x, y, mmx = -1, mmy = -1, mmx2 = 0;//mm是“move mode”的缩写，这两个变量所记录的是移动之前的坐标,规定当mmx为负数时代表当前不处于窗口移动模式
-    struct SHEET *sht = 0, *key_win;//key_win这个变量存放当前处于输入模式的窗口地址
+    struct SHEET *sht = 0, *key_win, *sht2;//key_win这个变量存放当前处于输入模式的窗口地址
 	
 	init_gdtidt();
 	init_pic();
@@ -145,6 +145,7 @@ void HariMain(void)
                         task->tss.eax = (int) &(task->tss.esp0);
                         task->tss.eip = (int) asm_end_app;
                         io_sti();
+                        task_run(task, -1, 0);  /*为了确实执行结束处理，如果处于休眠状态则唤醒*/
 			       }
                 }
                 if (i == 256 + 0x3c && key_shift != 0) {    /* Shift+F2 */
@@ -273,8 +274,13 @@ void HariMain(void)
                                                 task->tss.eax = (int) &(task->tss.esp0);
                         			            task->tss.eip = (int) asm_end_app;
                                                 io_sti();
+                                                task_run(task, -1, 0);
                                             }  else {    /*命令行窗口*/
                                                 task = sht->task;
+                                                sheet_updown(sht, -1); /*暂且隐藏该图层*/
+                                                keywin_off(key_win);
+                                                key_win = shtctl->sheets[shtctl->top - 1];
+                       					        keywin_on(key_win);
                                                 io_cli();
                                                 fifo32_put(&task->fifo, 4);
                				                    io_sti();
@@ -306,8 +312,13 @@ void HariMain(void)
 			else if (768 <= i && i <= 1023) { /*命令行窗口关闭处理*/        
                 close_console(shtctl->sheets0 + (i - 768));                    
             } 
-            else if (1024 <= i && i <= 2023) {                    /*从此开始*/
-                close_constask(taskctl->tasks0 + (i - 1024));       /*到此结束*/
+            else if (1024 <= i && i <= 2023) {                     
+                close_constask(taskctl->tasks0 + (i - 1024));      
+            }
+            else if (2024 <= i && i <= 2279) {    /*只关闭命令行窗口*/       
+                sht2 = shtctl->sheets0 + (i - 2024);
+                memman_free_4k(memman, (int) sht2->buf, 256 * 165);
+                sheet_free(sht2);                                                
             }
 		}
 	}

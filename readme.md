@@ -35,7 +35,8 @@
 - file.c：FAT解压缩、搜索磁盘文件、将文件装载到内存等函数（后两个type命令中要用）
 
 ##### 应用程序接口（API）
-- a_nask.nas
+- api001~020.nas
+
 ##### 应用程序
 - hello.nas
 - hello2.nas
@@ -44,7 +45,16 @@
 - hello4.c
 - winhelo.c
 - winhelo2.c
+- star1.c
+- stars.c
+- walk.c
+- lines.c
+- color.c
+- color2.c
+- beepdown.c
 
+##### 测试程序
+- crack7.nas
 ##### 字体数据
 - hankaku.txt
 

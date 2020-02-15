@@ -1,11 +1,15 @@
-#$表示路径
 OBJS_BOOTPACK = bootpack.obj naskfunc.obj hankaku.obj graphic.obj dsctbl.obj \
 		int.obj fifo.obj keyboard.obj mouse.obj memory.obj sheet.obj timer.obj \
-		mtask.obj console.obj file.obj window.obj
+		mtask.obj window.obj console.obj file.obj
+
+OBJS_API =	api001.obj api002.obj api003.obj api004.obj api005.obj api006.obj \
+			api007.obj api008.obj api009.obj api010.obj api011.obj api012.obj \
+			api013.obj api014.obj api015.obj api016.obj api017.obj api018.obj \
+			api019.obj api020.obj
 
 TOOLPATH = ../z_tools/
 INCPATH  = ../z_tools/haribote/
-
+#$表示路径
 MAKE     = $(TOOLPATH)make.exe -r
 NASK     = $(TOOLPATH)nask.exe
 CC1      = $(TOOLPATH)cc1.exe -I$(INCPATH) -Os -Wall -quiet
@@ -21,9 +25,9 @@ COPY     = copy
 DEL      = del
 
 #默认动作
-default:
-	$(MAKE) img
 
+default :
+	$(MAKE) img
 
 #文件生成规则
 
@@ -33,18 +37,6 @@ ipl10.bin : ipl10.nas Makefile
 asmhead.bin : asmhead.nas Makefile
 	$(NASK) asmhead.nas asmhead.bin asmhead.lst
 
-bootpack.gas : bootpack.c Makefile
-	$(CC1) -o bootpack.gas bootpack.c
-
-bootpack.nas : bootpack.gas Makefile
-	$(GAS2NASK) bootpack.gas bootpack.nas
-
-bootpack.obj : bootpack.nas Makefile
-	$(NASK) bootpack.nas bootpack.obj bootpack.lst
-
-naskfunc.obj : naskfunc.nas Makefile
-	$(NASK) naskfunc.nas naskfunc.obj naskfunc.lst
-	
 hankaku.bin : hankaku.txt Makefile
 	$(MAKEFONT) hankaku.txt hankaku.bin
 
@@ -61,105 +53,105 @@ bootpack.hrb : bootpack.bim Makefile
 
 haribote.sys : asmhead.bin bootpack.hrb Makefile
 	copy /B asmhead.bin+bootpack.hrb haribote.sys
-	
+
 hello.hrb : hello.nas Makefile
 	$(NASK) hello.nas hello.hrb hello.lst
 
 hello2.hrb : hello2.nas Makefile
 	$(NASK) hello2.nas hello2.hrb hello2.lst
 
-a.bim : a.obj a_nask.obj Makefile
-	$(OBJ2BIM) @$(RULEFILE) out:a.bim map:a.map a.obj a_nask.obj
+a.bim : a.obj $(OBJS_API) Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:a.bim map:a.map a.obj $(OBJS_API)
 
 a.hrb : a.bim Makefile
 	$(BIM2HRB) a.bim a.hrb 0
 
-hello3.bim : hello3.obj a_nask.obj Makefile
-	$(OBJ2BIM) @$(RULEFILE) out:hello3.bim map:hello3.map hello3.obj a_nask.obj
+hello3.bim : hello3.obj $(OBJS_API) Makefile
+	$(OBJ2BIM) @$(RULEFILE) out:hello3.bim map:hello3.map hello3.obj $(OBJS_API)
 
 hello3.hrb : hello3.bim Makefile
 	$(BIM2HRB) hello3.bim hello3.hrb 0
 
-hello4.bim : hello4.obj a_nask.obj Makefile
+hello4.bim : hello4.obj $(OBJS_API) Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:hello4.bim stack:1k map:hello4.map \
-		hello4.obj a_nask.obj
+		hello4.obj $(OBJS_API)
 
 hello4.hrb : hello4.bim Makefile
 	$(BIM2HRB) hello4.bim hello4.hrb 0
 
-winhelo.bim : winhelo.obj a_nask.obj Makefile
+winhelo.bim : winhelo.obj $(OBJS_API) Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:winhelo.bim stack:1k map:winhelo.map \
-		winhelo.obj a_nask.obj
+		winhelo.obj $(OBJS_API)
 
 winhelo.hrb : winhelo.bim Makefile
 	$(BIM2HRB) winhelo.bim winhelo.hrb 0
 
-winhelo2.bim : winhelo2.obj a_nask.obj Makefile
+winhelo2.bim : winhelo2.obj $(OBJS_API) Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:winhelo2.bim stack:1k map:winhelo2.map \
-		winhelo2.obj a_nask.obj
+		winhelo2.obj $(OBJS_API)
 
 winhelo2.hrb : winhelo2.bim Makefile
 	$(BIM2HRB) winhelo2.bim winhelo2.hrb 0
 
-winhelo3.bim : winhelo3.obj a_nask.obj Makefile
+winhelo3.bim : winhelo3.obj $(OBJS_API) Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:winhelo3.bim stack:1k map:winhelo3.map \
-		winhelo3.obj a_nask.obj
+		winhelo3.obj $(OBJS_API)
 
 winhelo3.hrb : winhelo3.bim Makefile
 	$(BIM2HRB) winhelo3.bim winhelo3.hrb 40k
 
-star1.bim : star1.obj a_nask.obj Makefile
+star1.bim : star1.obj $(OBJS_API) Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:star1.bim stack:1k map:star1.map \
-		star1.obj a_nask.obj
+		star1.obj $(OBJS_API)
 
 star1.hrb : star1.bim Makefile
 	$(BIM2HRB) star1.bim star1.hrb 47k
 
-stars.bim : stars.obj a_nask.obj Makefile
+stars.bim : stars.obj $(OBJS_API) Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:stars.bim stack:1k map:stars.map \
-		stars.obj a_nask.obj
+		stars.obj $(OBJS_API)
 
 stars.hrb : stars.bim Makefile
 	$(BIM2HRB) stars.bim stars.hrb 47k
 
-lines.bim : lines.obj a_nask.obj Makefile
+lines.bim : lines.obj $(OBJS_API) Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:lines.bim stack:1k map:lines.map \
-		lines.obj a_nask.obj
+		lines.obj $(OBJS_API)
 
 lines.hrb : lines.bim Makefile
 	$(BIM2HRB) lines.bim lines.hrb 48k
 
-walk.bim : walk.obj a_nask.obj Makefile
+walk.bim : walk.obj $(OBJS_API) Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:walk.bim stack:1k map:walk.map \
-		walk.obj a_nask.obj
+		walk.obj $(OBJS_API)
 
 walk.hrb : walk.bim Makefile
 	$(BIM2HRB) walk.bim walk.hrb 48k
 
-noodle.bim : noodle.obj a_nask.obj Makefile
+noodle.bim : noodle.obj $(OBJS_API) Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:noodle.bim stack:1k map:noodle.map \
-		noodle.obj a_nask.obj
+		noodle.obj $(OBJS_API)
 
 noodle.hrb : noodle.bim Makefile
 	$(BIM2HRB) noodle.bim noodle.hrb 40k
 
-beepdown.bim : beepdown.obj a_nask.obj Makefile
+beepdown.bim : beepdown.obj $(OBJS_API) Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:beepdown.bim stack:1k map:beepdown.map \
-		beepdown.obj a_nask.obj
+		beepdown.obj $(OBJS_API)
 
 beepdown.hrb : beepdown.bim Makefile
-	$(BIM2HRB) beepdown.bim beepdown.hrb 40k	
+	$(BIM2HRB) beepdown.bim beepdown.hrb 40k
 
-color.bim : color.obj a_nask.obj Makefile
+color.bim : color.obj $(OBJS_API) Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:color.bim stack:1k map:color.map \
-		color.obj a_nask.obj
+		color.obj $(OBJS_API)
 
 color.hrb : color.bim Makefile
 	$(BIM2HRB) color.bim color.hrb 56k
 
-color2.bim : color2.obj a_nask.obj Makefile
+color2.bim : color2.obj $(OBJS_API) Makefile
 	$(OBJ2BIM) @$(RULEFILE) out:color2.bim stack:1k map:color2.map \
-		color2.obj a_nask.obj
+		color2.obj $(OBJS_API)
 
 color2.hrb : color2.bim Makefile
 	$(BIM2HRB) color2.bim color2.hrb 56k
@@ -172,13 +164,14 @@ crack7.hrb : crack7.bim Makefile
 
 haribote.img : ipl10.bin haribote.sys Makefile \
 		hello.hrb hello2.hrb a.hrb hello3.hrb hello4.hrb \
-		winhelo.hrb winhelo2.hrb winhelo3.hrb star1.hrb stars.hrb lines.hrb \
-		walk.hrb noodle.hrb beepdown.hrb color.hrb color2.hrb crack7.hrb
+		winhelo.hrb winhelo2.hrb winhelo3.hrb star1.hrb stars.hrb \
+		lines.hrb walk.hrb noodle.hrb beepdown.hrb color.hrb color2.hrb \
+		crack7.hrb
 	$(EDIMG)   imgin:../z_tools/fdimg0at.tek \
 		wbinimg src:ipl10.bin len:512 from:0 to:0 \
 		copy from:haribote.sys to:@: \
 		copy from:ipl10.nas to:@: \
-        copy from:make.bat to:@: \
+		copy from:make.bat to:@: \
 		copy from:hello.hrb to:@: \
 		copy from:hello2.hrb to:@: \
 		copy from:a.hrb to:@: \
@@ -198,8 +191,7 @@ haribote.img : ipl10.bin haribote.sys Makefile \
 		copy from:crack7.hrb to:@: \
 		imgout:haribote.img
 #上面的copy好像是把这几个文件读到磁盘里
-		
-		
+
 # 一般規則
 
 %.gas : %.c bootpack.h Makefile
@@ -210,11 +202,12 @@ haribote.img : ipl10.bin haribote.sys Makefile \
 
 %.obj : %.nas Makefile
 	$(NASK) $*.nas $*.obj $*.lst
-	
+
 #命令 在cmd窗口输入，就会执行对应的命令
-img:
+
+img :
 	$(MAKE) haribote.img
-	
+
 run :
 	$(MAKE) img
 	$(COPY) haribote.img ..\z_tools\qemu\fdimage0.bin
@@ -232,8 +225,8 @@ clean :
 	-$(DEL) *.bim
 	-$(DEL) *.hrb
 	-$(DEL) haribote.sys
-	
+
 #从下面可以看出，make.exe的作用是进入makefile文件，然后执行里面的命令
-src_only:
+src_only :
 	$(MAKE) clean
 	-$(DEL) haribote.img

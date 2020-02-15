@@ -11,12 +11,10 @@
 
 ## os文件夹内
 
-##### 启动程序加载器（将OS从磁盘读入内存）
-- ipl10.nas
-    
-##### os源代码
+##### haribote文件夹：os核心代码
 
 - asmhead.nas: 对OS的各种设置，以及为了调用bootpack所写的程序
+- ipl10.nas：启动程序加载器（将OS从磁盘读入内存
 - naskfunc.nas：存放用汇编写的函数(包括API)，编译后与bootpack.obj链接
 - bootpack.h：常数设定和各种函数、结构体的声明
 - bootpack.c:  OS主任务
@@ -33,30 +31,13 @@
 - console.c：命令行窗口任务相关（控制台）（包括各种命令的处理函数）
 - window.c：窗口相关函数
 - file.c：FAT解压缩、搜索磁盘文件、将文件装载到内存等函数（后两个type命令中要用）
+- hankaku.txt：字体数据
 
-##### 应用程序接口（API）
-- api001~020.nas
+##### apilib文件夹：应用程序接口（API）以及库文件
+- api001~020.nas ：api
+- apilib.lib：库
 
-##### 应用程序
-- hello.nas
-- hello2.nas
-- a.c
-- hello3.c
-- hello4.c
-- winhelo.c
-- winhelo2.c
-- star1.c
-- stars.c
-- walk.c
-- lines.c
-- color.c
-- color2.c
-- beepdown.c
-
-##### 测试程序
-- crack7.nas
-##### 字体数据
-- hankaku.txt
+##### 其他文件夹：各种应用程序
 
 ##### 文件生成规则和命令
 - Makefile

@@ -82,8 +82,10 @@ struct TASK *task_init(struct MEMMAN *memman)
 	for (i = 0; i < MAX_TASKS; i++) {
 		taskctl->tasks0[i].flags = 0;
 		taskctl->tasks0[i].sel = (TASK_GDT0 + i) * 8;//从gdt里选择哪个编号的段//这里为什么要乘以8???
-		set_segmdesc(gdt + TASK_GDT0 + i, 103, (int) &taskctl->tasks0[i].tss, AR_TSS32);//段长限制为103字节
-	}
+		taskctl->tasks0[i].tss.ldtr = (TASK_GDT0 + MAX_TASKS + i) * 8; 
+        set_segmdesc(gdt + TASK_GDT0 + i, 103, (int) &taskctl->tasks0[i].tss, AR_TSS32);//段长限制为103字节
+	    set_segmdesc(gdt + TASK_GDT0 + MAX_TASKS + i, 15, (int) taskctl->tasks0[i].ldt, AR_LDT); 
+    }
 	for (i = 0; i < MAX_TASKLEVELS; i++) {
         taskctl->level[i].running = 0;
         taskctl->level[i].now = 0;
@@ -132,7 +134,7 @@ struct TASK *task_alloc(void)//任务分配，也就是TSS段的初始化等等�
 			task->tss.ds = 0;
 			task->tss.fs = 0;
 			task->tss.gs = 0;
-			task->tss.ldtr = 0;
+			
 			task->tss.iomap = 0x40000000;
 			task->tss.ss0 = 0; 
 			return task;

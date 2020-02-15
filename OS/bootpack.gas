@@ -518,9 +518,9 @@ L12:
 	addl	$16, %esp
 	jmp	L2
 L85:
-	imull	$160, %esi, %esi
+	imull	$176, %esi, %esi
 	addl	_taskctl, %esi
-	leal	-159752(%esi), %eax
+	leal	-176136(%esi), %eax
 	pushl	%eax
 	call	_close_constask
 L74:
@@ -693,7 +693,7 @@ L57:
 	movl	-1104(%ebp), %eax
 	movl	36(%eax), %ebx
 	pushl	$LC1
-	pushl	148(%ebx)
+	pushl	164(%ebx)
 	call	_cons_putstr0
 	call	_io_cli
 	leal	48(%ebx), %eax
@@ -926,7 +926,7 @@ L92:
 	cmpl	$0, 52(%ebx)
 	je	L17
 	pushl	$LC0
-	pushl	148(%ebx)
+	pushl	164(%ebx)
 	call	_cons_putstr0
 	call	_io_cli
 	leal	48(%ebx), %eax
@@ -1056,7 +1056,7 @@ _open_constask:
 	call	_memman_alloc_4k
 	movl	8(%ebp), %edx
 	movl	$_console_task, 76(%ebx)
-	movl	%eax, 156(%ebx)
+	movl	%eax, 172(%ebx)
 	addl	$65524, %eax
 	movl	%eax, 100(%ebx)
 	movl	$8, 116(%ebx)
@@ -1147,7 +1147,7 @@ _close_constask:
 	pushl	%ebx
 	call	_task_sleep
 	pushl	$65536
-	pushl	156(%ebx)
+	pushl	172(%ebx)
 	pushl	$3932160
 	call	_memman_free_4k
 	pushl	$512

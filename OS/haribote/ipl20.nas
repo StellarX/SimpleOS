@@ -1,7 +1,7 @@
 ; hello-os
 ; TAB=4
 	
-CYLS	EQU		10				; 读取多少柱面
+CYLS	EQU		20				; 读取多少柱面
 
 		ORG		0x7c00			; 指明程序的装载地址
 
@@ -100,6 +100,6 @@ msg:
 		DB		0x0a			; 改行
 		DB		0
 
-		RESB	0x7dfe-$		; 填写0x00,直到 0x007dfe
+		RESB	0x7dfe-$		; 0x7dfeまでを0x00で埋める命令  填写0x00,直到 0x007dfe
 
 		DB		0x55, 0xaa

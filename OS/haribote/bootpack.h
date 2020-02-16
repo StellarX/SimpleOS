@@ -224,7 +224,7 @@ struct TASK {
     struct FILEHANDLE *fhandle; 
     int *fat;
     char *cmdline;
-    char langmode;
+    unsigned char langmode, langbyte1;
 };
 struct TASKLEVEL {
     int running; /*正在运行的任务数量*/
@@ -287,6 +287,7 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 int *inthandler0d(int *esp);
 int *inthandler0c(int *esp);
 void hrb_api_linewin(struct SHEET *sht, int x0, int y0, int x1, int y1, int col);
+void cmd_langmode(struct CONSOLE *cons, char *cmdline);
 
 /* file.c */
 struct FILEINFO {

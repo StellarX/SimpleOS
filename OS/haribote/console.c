@@ -31,6 +31,7 @@ void console_task(struct SHEET *sheet, int memtotal)
     } else {
         task->langmode = 0;
     }
+    task->langbyte1 = 0; 
 
 	if (cons.sht != 0) {                                   /*从此开始*/
         cons.timer = timer_alloc();
@@ -179,6 +180,7 @@ void cons_newline(struct CONSOLE *cons)
 {
     int x, y;
 	struct SHEET *sheet = cons->sht;
+	struct TASK *task = task_now();
     if (cons->cur_y < 28 + 112) {
 		cons->cur_y += 16;/*换行*/
     } else {
@@ -198,6 +200,9 @@ void cons_newline(struct CONSOLE *cons)
         }
     }
 	cons->cur_x = 8;
+	if (task->langmode == 1 && task->langbyte1 != 0) {    
+        cons->cur_x += 8;
+    }  
     return;
 }
 
@@ -340,6 +345,7 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
             }                    
             timer_cancelall(&task->fifo);           
 			memman_free_4k(memman, (int) q, segsiz);
+			task->langbyte1 = 0; 
         } else {
             cons_putstr0(cons, ".hrb file format error.\n");
         }
@@ -556,6 +562,8 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
             i++;
         }
         reg[7] = i;
+    } else if (edx == 27) {
+        reg[7] = task->langmode;
     }
     return 0;
 }
@@ -672,7 +680,7 @@ void cmd_langmode(struct CONSOLE *cons, char *cmdline)
     struct TASK *task = task_now();
 
     unsigned char mode = cmdline[9] - '0';
-    if (mode <= 1) {
+    if (mode <= 2) {
         task->langmode = mode;
     } else {
         cons_putstr0(cons, "mode number error.\n");

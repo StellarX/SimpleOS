@@ -284,10 +284,9 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
     struct FILEINFO *finfo;
     char name[18], *p, *q;
 	struct TASK *task = task_now();
-    int i;
-	int segsiz, datsiz, esp, dathrb;
+    int i, segsiz, datsiz, esp, dathrb, appsiz;
 	struct SHTCTL *shtctl;  
-    struct SHEET *sht; 
+    struct SHEET *sht;
 	
 	/*根据命令行生成文件名*/
     for (i = 0; i < 13; i++) {
@@ -313,9 +312,9 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
 	
 	if (finfo != 0) {
 		/* 找到文件的情况 */
-		p = (char *) memman_alloc_4k(memman, finfo->size);//将文件载入到此内存空间
-		file_loadfile(finfo->clustno, finfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));//将文件载入到此内存空间
-		if (finfo->size >= 36 && strncmp(p + 4, "Hari", 4) == 0 && *p == 0x00) {
+		appsiz = finfo->size;                                                   /*从此开始*/
+        p = file_loadfile2(finfo->clustno, &appsiz, fat);
+		if (appsiz >= 36 && strncmp(p + 4, "Hari", 4) == 0 && *p == 0x00) {
             segsiz = *((int *) (p + 0x0000));
             esp    = *((int *) (p + 0x000c));
             datsiz = *((int *) (p + 0x0010));
@@ -349,7 +348,7 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
         } else {
             cons_putstr0(cons, ".hrb file format error.\n");
         }
-		memman_free_4k(memman, (int) p, finfo->size);
+		memman_free_4k(memman, (int) p, appsiz); 
         cons_newline(cons);
         return 1;
 	} 
@@ -506,8 +505,7 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
                 fh->buf = (char *) memman_alloc_4k(memman, finfo->size);
                 fh->size = finfo->size;
                 fh->pos = 0;
-                file_loadfile(finfo->clustno, finfo->size, fh->buf, task->fat, (char *) 
-                    (ADR_DISKIMG + 0x003e00));
+                fh->buf = file_loadfile2(finfo->clustno, &fh->size, task->fat);
             }
         }
     } else if (edx == 22) {

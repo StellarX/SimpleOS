@@ -50,3 +50,5 @@ https://www.processon.com/view/link/5bac826ee4b0bd4db94e91c1
 https://www.processon.com/view/link/5bad7f8fe4b0fe81b6499b99
 ### 多任务控制结构示意图
 https://www.processon.com/view/link/5e305525e4b00fbcc461e8a7
+### 一些较难理解的部分我会在我的csdn blog上解释，欢迎讨论：
+https://blog.csdn.net/rakish_wind

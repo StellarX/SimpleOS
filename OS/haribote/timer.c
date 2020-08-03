@@ -15,8 +15,8 @@ void init_pit(void)
 	int i;
 	struct TIMER *t;
 	io_out8(PIT_CTRL, 0x34);
-	io_out8(PIT_CNT0, 0x9c);
-	io_out8(PIT_CNT0, 0x2e);
+	io_out8(PIT_CNT0, 0x9c);//
+	io_out8(PIT_CNT0, 0x2e);//对应中断频率是100Hz
 	timerctl.count = 0;
 
 	for (i = 0; i < MAX_TIMER; i++) {
@@ -57,7 +57,8 @@ void timer_init(struct TIMER *timer, struct FIFO32 *fifo, int data)
 	return;
 }
 
-void timer_settime(struct TIMER *timer, unsigned int timeout)
+//将定时器插入到链表的指定位置，根据超时时间
+void timer_settime(struct TIMER *timer, unsigned int timeout)//对于任务定时器而言，timeout对应着优先级
 {
 	int e;
 	struct TIMER *t, *s;
@@ -138,8 +139,8 @@ void timer_cancelall(struct FIFO32 *fifo)
     return;
 }
 
-
-void inthandler20(int *esp)//定时器中断程序，1s会自动产生100次中断，也就是自动执行这个程序
+//定时器中断程序，1s会自动产生100次中断，也就是自动执行这个程序
+void inthandler20(int *esp)
 {
 	char ts = 0;//mt_timer超时标记
 	struct TIMER *timer;
@@ -154,13 +155,13 @@ void inthandler20(int *esp)//定时器中断程序，1s会自动产生100次中�
 	for (;;) {
         /* timers的定时器都处于动作中，所以不确认flags */
         if (timer->timeout > timerctl.count) {
-            break;
+            break;//还没到时
         }
         /* 超时*/
         timer->flags = TIMER_FLAGS_ALLOC;
         if (timer != task_timer) {
             fifo32_put(timer->fifo, timer->data);
-        } else {
+        } else {//表示这是多任务专用的timer，要切换任务了
             ts = 1; /* mt_timer超时*/
         }
         timer = timer->next; /*将下一个计时器的地址赋给timer */
@@ -170,7 +171,7 @@ void inthandler20(int *esp)//定时器中断程序，1s会自动产生100次中�
 	/* timerctl.next的设定 */
 	timerctl.next = timerctl.t0->timeout; 
 	if (ts != 0) {
-        task_switch();
+        task_switch();//任务切换
     }
 	return;
 }

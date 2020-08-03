@@ -27,7 +27,7 @@ int fifo32_put(struct FIFO32 *fifo, int data)
 	}
 	fifo->buf[fifo->p] = data;
 	fifo->p++;
-	if (fifo->p == fifo->size) {
+	if (fifo->p == fifo->size) {//循环缓冲队列
 		fifo->p = 0;
 	}
 	fifo->free--;//剩余空间--

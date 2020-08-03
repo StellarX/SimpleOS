@@ -35,10 +35,10 @@ void task_remove(struct TASK *task)//从struct TASKLEVEL中删除一个任务
 
     tl->running--;
     if (i < tl->now) {
-        tl->now--; /*需要移动成员，要相应地处理  */
+        tl->now--; /*需要移动成员，要相应地处理  也就是当前level还有任务在运行*/
     }
     if (tl->now >= tl->running) {
-        /*如果now的值出现异常，则进行修正*/
+        /*如果now的值出现异常，则进行修正  待思考*/
         tl->now = 0;
     }
     task->flags = 1; /* 休眠中 */
@@ -61,7 +61,7 @@ void task_switchsub(void)//在任务切换时决定接下来切换到哪个LEVEL
         }
     }
     taskctl->now_lv = i;
-    taskctl->lv_change = 0;//在下次任务切换时是否需要改变LEVEL
+    taskctl->lv_change = 0;//在下次任务切换时是否需要改变LEVEL  待思考
     return;
 }
 
@@ -96,7 +96,7 @@ struct TASK *task_init(struct MEMMAN *memman)
 	task->level = 0;    /*最高LEVEL */
 	task_add(task);
     task_switchsub();   /* LEVEL 设置*/
-	load_tr(task->sel);////任务寄存器，表示当前在运行哪个任务
+	load_tr(task->sel);////任务寄存器，表示当前在运行哪个任务  这里sel好像并没有初值？ 待思考
 	task_timer = timer_alloc();
 	timer_settime(task_timer, task->priority);
 	
@@ -148,10 +148,10 @@ void task_run(struct TASK *task, int level, int priority)//准备运行，注意
 	if (level < 0) {
         level = task->level; /*不改变LEVEL */
     }
-	if (priority > 0) {//为0时则表示不改变当前已经设定的优先级,这个主要是为了唤醒休眠任务时
+	if (priority > 0) {//为0时则表示不改变当前已经设定的优先级,这个主要是为了唤醒休眠任务时 待思考
         task->priority = priority;
     }
-	if (task->flags == 2 && task->level != level) { /*改变活动中的LEVEL 要先移出当前level*/
+	if (task->flags == 2 && task->level != level) { /*这里意思就是如果这个任务已经在允许，只是改变level，就要先从当前level移出*/
         task_remove(task); /*这里执行之后flag的值会变为1，于是下面的if语句块也会被执行*/
     }
 	if (task->flags != 2) {
@@ -174,7 +174,7 @@ void task_sleep(struct TASK *task)
             /*如果是让自己休眠，则需要进行任务切换*/
             task_switchsub();
             now_task = task_now(); /*在设定后获取当前任务的值*/
-            farjmp(0, now_task->sel);
+            farjmp(0, now_task->sel);//跳转执行
         }
     }
     return;
@@ -185,12 +185,12 @@ void task_switch(void)
 	struct TASKLEVEL *tl = &taskctl->level[taskctl->now_lv];
     struct TASK *new_task, *now_task = tl->tasks[tl->now];
     tl->now++;
-    if (tl->now == tl->running) {
+    if (tl->now == tl->running) { //待思考
         tl->now = 0;
     }
     if (taskctl->lv_change != 0) {
         task_switchsub();//检查层级
-        tl = &taskctl->level[taskctl->now_lv];
+        tl = &taskctl->level[taskctl->now_lv];  //可能会改变层级，因为可能有高level的任务
     }
     new_task = tl->tasks[tl->now];
     timer_settime(task_timer, new_task->priority);

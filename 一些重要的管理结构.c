@@ -11,7 +11,7 @@ struct FREEINFO {	/* 可用信息 */
 };
 struct MEMMAN {		/* 内存管理 */
 	int frees, maxfrees, lostsize, losts;
-	struct FREEINFO free[MEMMAN_FREES];/* 約32KB */
+	struct FREEINFO free[MEMMAN_FREES];/* 約32KB */ 
 };
 
 
@@ -66,7 +66,7 @@ struct TASKLEVEL {
 };
 struct TASKCTL {
 	int now_lv; /*现在活动中的LEVEL */
-    	char lv_change; /*在下次任务切换时是否需要改变LEVEL */
+    char lv_change; /*在下次任务切换时是否需要改变LEVEL */
 	struct TASKLEVEL level[MAX_TASKLEVELS];
 	struct TASK tasks0[MAX_TASKS];
 };

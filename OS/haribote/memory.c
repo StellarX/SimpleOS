@@ -70,7 +70,7 @@ unsigned int memman_alloc(struct MEMMAN *man, unsigned int size)
 			if (man->free[i].size == 0) {
 				/* 如果free[i]变成了0，就减掉一条可用信息 */
 				man->frees--;
-				for (; i < man->frees; i++) {//依次前移
+				for (; i < man->frees; i++) {//i之后的依次前移
 					man->free[i] = man->free[i + 1]; /* 代入结构体 */
 				}
 			}
@@ -85,17 +85,17 @@ int memman_free(struct MEMMAN *man, unsigned int addr, unsigned int size)
 {
 	int i, j;
     /* 为便于归纳内存，将free[]按照addr的顺序排列 */
-    /* 所以，先决定应该放在哪里 */
+    /* 即需要找到要释放的内存的前后空闲free的地址，因为后面肯定会合并的 */
 	for (i = 0; i < man->frees; i++) {
 		if (man->free[i].addr > addr) {
-			break;/* free[i - 1].addr < addr < free[i].addr */
+			break;/* addr在这个区间：free[i - 1].addr < addr < free[i].addr */
 		}
 	}
 	
-	if (i > 0) {
+	if (i > 0) {	
 		/* 前面有可用内存 */
 		if (man->free[i - 1].addr + man->free[i - 1].size == addr) {
-			/* 可以与前面的可用内存归纳到一起 */
+			/* 可以与前面的可用内存归纳到一起（也就是相邻的情况）*/
 			man->free[i - 1].size += size;
 			if (i < man->frees) {//这里感觉有点问题，i的初始值如果为0？？？
 				/* 后面也有 */
@@ -113,18 +113,18 @@ int memman_free(struct MEMMAN *man, unsigned int addr, unsigned int size)
 			return 0; /* 成功 */
 		}
 	}
-	/* 不能与前面的可用空间归纳到一起  */
+	/* 以下是i==0的情况  不能与前面的可用空间归纳到一起  */
 	if (i < man->frees) {
 		/* 后面还有 */
 		if (addr + size == man->free[i].addr) {
-			/* 可以与后面的内容归纳到一起  */
+			/* 但可以与后面的内容归纳到一起  */
 			man->free[i].addr = addr;
 			man->free[i].size += size;
 			return 0; /* 成功 */
 		}
 	}
 	/*  既不能与前面归纳到一起，也不能与后面归纳到一起 */
-	if (man->frees < MEMMAN_FREES) {
+	if (man->frees < MEMMAN_FREES) {// 如果还有free空间
 		/*  free[i]之后的，向后移动，腾出一点可用空间 */
 		for (j = man->frees; j > i; j--) {
 			man->free[j] = man->free[j - 1];
@@ -137,7 +137,7 @@ int memman_free(struct MEMMAN *man, unsigned int addr, unsigned int size)
 		man->free[i].size = size;
 		return 0; /* 成功 */
 	}
-	/* 不能往后移动 ，空间管理信息用完*/
+	/* 不能往后移动 ，没有free空间，空间管理信息用完*/
 	man->losts++;
 	man->lostsize += size;
 	return -1; /* 失敗 */

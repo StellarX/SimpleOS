@@ -182,13 +182,14 @@ void sheet_free(struct SHEET *sht);
 #define MAX_TIMER		500
 struct TIMER {
 	struct TIMER *next;//下一个定时器的地址
-	unsigned int timeout;
-	char flags, flags2;
+	unsigned int timeout;//记录离超时还有多长时间。达到0就往FIFO缓冲区里发送数据
+	char flags, flags2;//flags 是否使用
 	struct FIFO32 *fifo;
 	int data;
 };
 struct TIMERCTL {
-	unsigned int count, next;//next 下一个超时时刻
+	unsigned int count, next;
+	//count 记录定时器中断发生的次数 next 下一个超时时刻
 	struct TIMER *t0;
 	struct TIMER timer0[MAX_TIMER];
 };

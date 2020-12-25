@@ -1,3 +1,5 @@
+# 一些较难理解的部分我会在我的blog上的相关文章中解释，欢迎讨论：
+https://blog.csdn.net/rakish_wind
 # 一、项目说明
 一个32位的多任务图形操作系统（目前已实现中断处理、内存管理、图层叠加处理、定时器管理、
 多任务、英文字符输入、命令行、应用程序）
@@ -50,5 +52,3 @@ https://www.processon.com/view/link/5bac826ee4b0bd4db94e91c1
 https://www.processon.com/view/link/5bad7f8fe4b0fe81b6499b99
 ### 多任务控制结构示意图
 https://www.processon.com/view/link/5e305525e4b00fbcc461e8a7
-### 一些较难理解的部分我会在我的csdn blog上解释，欢迎讨论：
-https://blog.csdn.net/rakish_wind
